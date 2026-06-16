@@ -1996,6 +1996,8 @@ function moveBoxLayer(id, direction){
 
   function clearGlobalInputFields(){
     ['medium','high','aesthetics','lighting','styleField','background'].forEach(id=>{ if($(id)) $(id).value=''; });
+    // Also wipe layout boxes — leftover boxes aren't useful once everything else is cleared.
+    state.boxes=[]; state.selected=null; state.selectedAll=false;
     renderAll();
     setStatus('leftStatus',t('globalInputsCleared'),'ok');
     autoSaveDebounced();
