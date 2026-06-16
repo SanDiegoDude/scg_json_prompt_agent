@@ -148,7 +148,10 @@ function openBuilderModal(node) {
 
   const iframe = document.createElement("iframe");
   iframe.className = "okims-frame";
-  iframe.src = BUILDER_URL;
+  // Cache-bust the builder HTML: ComfyUI serves .html with no Cache-Control,
+  // so browsers heuristically cache the iframe document and show a stale UI.
+  // A fresh query string on every open forces the latest build to load.
+  iframe.src = BUILDER_URL + (BUILDER_URL.includes("?") ? "&" : "?") + "v=" + Date.now();
   iframe.allow = "clipboard-read; clipboard-write";
 
   modal.append(iframe);
