@@ -4,6 +4,11 @@ A ComfyUI custom node for authoring **structured JSON prompts** (Ideogram-style)
 with a visual, drag-to-draw **bounding-box layout editor** and a set of optional
 **VLM/LLM agents** that fill in the creative fields and lay out the scene for you.
 
+<img width="1272" height="632" alt="image" src="https://github.com/user-attachments/assets/bf9fcdfa-491d-4fa7-a7c0-92ad23d58d3c" />
+<img width="792" height="632" alt="image" src="https://github.com/user-attachments/assets/55282b6b-6699-4cf2-93e2-bad932569180" />
+
+
+
 It opens a full-screen builder over the ComfyUI canvas where you can:
 
 - Compose the **creative fields** (medium, aesthetics, lighting, photo, subject,
