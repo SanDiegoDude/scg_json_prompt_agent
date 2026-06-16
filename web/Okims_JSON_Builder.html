@@ -653,7 +653,7 @@
         <label class="vlmToggle"><input type="checkbox" id="vlmSchema"><span>Force JSON schema (strict output)</span></label>
         <div class="agentFieldRow" style="margin-top:8px">
           <div><label class="labelLine"><span>Temperature</span></label><input id="vlmTemp" type="number" min="0" max="2" step="0.05" value="0.7"></div>
-          <div><label class="labelLine"><span>Max tokens</span></label><input id="vlmMaxTokens" type="number" min="64" max="32768" step="64" value="2048"></div>
+          <div><label class="labelLine"><span>Max tokens</span></label><input id="vlmMaxTokens" type="number" min="64" max="32768" step="64" value="8192"></div>
         </div>
         <div class="hint" style="margin-top:8px">Providers come from the <code>.env</code> file in the node folder (see <code>.env.example</code>). Keys stay on the server. These settings apply to every agent call (global fields, summarizer, and bbox layout).</div>
       </div>
@@ -2230,7 +2230,7 @@ function moveBoxLayer(id, direction){
 
   // Configurable agent params (Agent Configuration panel).
   function vlmTemp(){ const v=parseFloat($('vlmTemp')?.value); return isFinite(v)?clamp(v,0,2):0.7; }
-  function vlmMaxTokens(){ const v=parseInt($('vlmMaxTokens')?.value,10); return (isFinite(v)&&v>0)?clamp(v,64,32768):2048; }
+  function vlmMaxTokens(){ const v=parseInt($('vlmMaxTokens')?.value,10); return (isFinite(v)&&v>0)?clamp(v,64,32768):8192; }
   function vlmSchemaOn(){ return !!($('vlmSchema') && $('vlmSchema').checked); }
   function globalRuleset(){ const v=($('rulesetGlobal')?.value||'').trim(); return v||DEFAULT_RULESET_GLOBAL; }
   function summaryRuleset(){ const v=($('rulesetSummary')?.value||'').trim(); return v||DEFAULT_RULESET_SUMMARY; }

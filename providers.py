@@ -174,9 +174,9 @@ def build_request_body(cfg, payload):
     }
 
     try:
-        max_tokens = int(payload.get("max_tokens") or 2048)
+        max_tokens = int(payload.get("max_tokens") or 8192)
     except (TypeError, ValueError):
-        max_tokens = 2048
+        max_tokens = 8192
     max_tokens = max(64, min(max_tokens, 32768))
 
     host = (urlsplit(cfg["base_url"]).hostname or "")

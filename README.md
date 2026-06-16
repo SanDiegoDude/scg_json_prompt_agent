@@ -104,22 +104,62 @@ ComfyUI server to make the call on its behalf.
 
 ### Gemini via Vertex AI
 
-Vertex providers use a `vertex://PROJECT/LOCATION` base URL and authenticate with
-Google OAuth rather than a static key:
+Vertex providers reach Gemini through Vertex's OpenAI-compatible endpoint. They
+use a `vertex://PROJECT/LOCATION` base URL and authenticate with Google OAuth
+(no static key in the 4th field):
 
 ```
-AI_PROVIDER_VERTEX = Gemini · Vertex | gemini-3.5-flash | vertex://your-gcp-project/us-central1 |
+AI_PROVIDER_<ID> = Label | model | vertex://PROJECT/LOCATION | [path/to/service-account.json]
 ```
 
-- Use `global` as the `LOCATION` for the global endpoint, or a region such as
-  `us-central1`.
-- Install `google-auth` (`pip install -r requirements.txt`).
-- Authenticate one of two ways:
-  - **Application Default Credentials** (leave the 4th field blank) — run
-    `gcloud auth application-default login` on the machine running ComfyUI.
-  - **Service account** — put the path to the SA JSON in the 4th field.
-- The server appends the required `google/` model prefix and fetches/refreshes
-  the OAuth token for you; no key ever touches the browser.
+Replace `PROJECT` with your Google Cloud project id, and `LOCATION` with `global`
+(the global endpoint) or a region such as `us-central1`. Leave the 4th field
+blank to use Application Default Credentials, or set it to a service-account JSON
+path. The server adds the required `google/` model prefix and fetches/refreshes
+the OAuth token for you, so nothing sensitive reaches the browser.
+
+**Setup, step by step:**
+
+1. **Enable the API.** In your Google Cloud project, enable the *Vertex AI API*
+   and make sure billing is enabled.
+
+2. **Install the auth dependency** into the same environment ComfyUI runs in:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Authenticate** — pick one:
+
+   - **Application Default Credentials (simplest).** Install the
+     [gcloud CLI](https://cloud.google.com/sdk/docs/install), then run:
+
+     ```bash
+     gcloud auth application-default login
+     ```
+
+     Leave the 4th `.env` field blank.
+
+   - **Service account.** Create a service account with the *Vertex AI User*
+     role, download its JSON key, and put the file path in the 4th `.env` field:
+
+     ```
+     AI_PROVIDER_GEMINI = Gemini Vertex | gemini-2.0-flash | vertex://my-project-id/global | /home/me/keys/vertex-sa.json
+     ```
+
+4. **Add the provider line** to `.env` (replace the placeholders with your own
+   project, region, and model):
+
+   ```
+   AI_PROVIDER_GEMINI = Gemini Vertex | gemini-2.0-flash | vertex://my-project-id/us-central1 |
+   ```
+
+5. **Restart ComfyUI** once so the provider registers, then select it from the
+   picker in **Agent Configuration → Agent settings**. (Later `.env` edits only
+   need the **Refresh** button.)
+
+> **Tip:** Gemini "flash/thinking" models spend tokens on internal reasoning, so
+> keep **Max tokens** generous (8k+) or replies can come back truncated/empty.
 
 ### A note on OpenAI GPT-5 / o-series models
 
