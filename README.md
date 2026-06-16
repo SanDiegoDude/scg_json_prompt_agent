@@ -50,9 +50,16 @@ category.
 
 ### Dependencies
 
-None beyond what ComfyUI already ships. The agent calls are proxied through the
-ComfyUI server using its bundled `aiohttp`; there is **no `openai` package or
-other pip dependency** to install, so there is no `requirements.txt`.
+For the common case (OpenAI-compatible endpoints like LM Studio, OpenAI, Grok,
+Gemini's OpenAI-compat URL), there is **nothing to install** — the agent calls
+are proxied through the ComfyUI server using its bundled `aiohttp`.
+
+The only optional dependency is **`google-auth`**, which is required *only* if
+you configure a **Vertex AI** provider (see below). Install it with:
+
+```bash
+pip install -r requirements.txt
+```
 
 ## Configuring AI providers (`.env`)
 
@@ -94,6 +101,25 @@ ComfyUI server to make the call on its behalf.
 
 > **Security:** `.env` is git-ignored. Never commit your keys. The proxy only
 > exposes provider id/label/model to the browser; URLs and keys remain server-side.
+
+### Gemini via Vertex AI
+
+Vertex providers use a `vertex://PROJECT/LOCATION` base URL and authenticate with
+Google OAuth rather than a static key:
+
+```
+AI_PROVIDER_VERTEX = Gemini · Vertex | gemini-3.5-flash | vertex://your-gcp-project/us-central1 |
+```
+
+- Use `global` as the `LOCATION` for the global endpoint, or a region such as
+  `us-central1`.
+- Install `google-auth` (`pip install -r requirements.txt`).
+- Authenticate one of two ways:
+  - **Application Default Credentials** (leave the 4th field blank) — run
+    `gcloud auth application-default login` on the machine running ComfyUI.
+  - **Service account** — put the path to the SA JSON in the 4th field.
+- The server appends the required `google/` model prefix and fetches/refreshes
+  the OAuth token for you; no key ever touches the browser.
 
 ### A note on OpenAI GPT-5 / o-series models
 

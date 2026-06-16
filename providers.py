@@ -14,6 +14,7 @@ machine running ComfyUI and sidesteps browser CORS entirely.
 import os
 import re
 import json
+import asyncio
 from urllib.parse import urlsplit
 
 ENV_PATH = os.path.join(os.path.dirname(__file__), ".env")
@@ -23,6 +24,13 @@ DEFAULT_OPENAI_BASE = "https://api.openai.com/v1"
 # ``max_completion_tokens`` (not ``max_tokens``), accept a ``reasoning_effort``
 # knob, and reject custom ``temperature`` values.
 _REASONING_RE = re.compile(r"^(o\d|gpt-5)", re.IGNORECASE)
+
+# Gemini on Vertex AI is reached through its OpenAI-compatible endpoint, but it
+# authenticates with a short-lived Google OAuth token (ADC or a service-account
+# JSON) instead of a static key, and models must be prefixed with ``google/``.
+VERTEX_SCHEME = "vertex://"
+_VERTEX_SCOPES = ["https://www.googleapis.com/auth/cloud-platform"]
+_vertex_creds_cache = {}
 
 
 def _parse_provider_line(raw_value):
@@ -100,6 +108,55 @@ def _chat_completions_url(base_url):
     return base + "/chat/completions"
 
 
+def is_vertex(base_url):
+    return bool(base_url) and base_url.strip().lower().startswith(VERTEX_SCHEME)
+
+
+def _vertex_parts(base_url):
+    """Parse ``vertex://PROJECT/LOCATION`` -> (project, location)."""
+    rest = base_url.strip()[len(VERTEX_SCHEME):].strip("/")
+    bits = [b for b in rest.split("/") if b]
+    project = bits[0] if bits else ""
+    location = bits[1] if len(bits) > 1 else "global"
+    return project, location
+
+
+def vertex_chat_url(base_url):
+    project, location = _vertex_parts(base_url)
+    if location == "global":
+        host = "https://aiplatform.googleapis.com"
+    else:
+        host = "https://%s-aiplatform.googleapis.com" % location
+    return "%s/v1/projects/%s/locations/%s/endpoints/openapi/chat/completions" % (
+        host, project, location,
+    )
+
+
+def vertex_access_token(sa_path=""):
+    """Return a fresh Google OAuth access token for Vertex AI.
+
+    Uses a service-account JSON when ``sa_path`` is given, otherwise falls back
+    to Application Default Credentials (``gcloud auth application-default
+    login``). Raises if google-auth is missing or credentials can't be found.
+    """
+    from google.auth.transport.requests import Request
+    key = sa_path or "__adc__"
+    creds = _vertex_creds_cache.get(key)
+    if creds is None:
+        if sa_path:
+            from google.oauth2 import service_account
+            creds = service_account.Credentials.from_service_account_file(
+                sa_path, scopes=_VERTEX_SCOPES,
+            )
+        else:
+            import google.auth
+            creds, _ = google.auth.default(scopes=_VERTEX_SCOPES)
+        _vertex_creds_cache[key] = creds
+    if not creds.valid:
+        creds.refresh(Request())
+    return creds.token
+
+
 def build_request_body(cfg, payload):
     """Construct the outbound OpenAI-compatible request body.
 
@@ -107,6 +164,9 @@ def build_request_body(cfg, payload):
     Provider model/keys come from the server-side config.
     """
     model = cfg["model"]
+    vertex = is_vertex(cfg["base_url"])
+    if vertex and not model.startswith("google/"):
+        model = "google/" + model
     body = {
         "model": model,
         "messages": payload.get("messages", []),
@@ -177,11 +237,28 @@ def register_routes():
                 status=400,
             )
 
-        url = _chat_completions_url(cfg["base_url"])
         body = build_request_body(cfg, payload)
         headers = {"Content-Type": "application/json"}
-        if cfg["api_key"]:
-            headers["Authorization"] = "Bearer " + cfg["api_key"]
+
+        if is_vertex(cfg["base_url"]):
+            url = vertex_chat_url(cfg["base_url"])
+            try:
+                loop = asyncio.get_event_loop()
+                token = await loop.run_in_executor(
+                    None, vertex_access_token, cfg["api_key"] or ""
+                )
+            except Exception as exc:
+                return web.json_response(
+                    {"error": "Vertex auth failed: %s. Run `gcloud auth "
+                              "application-default login` or point the 4th .env "
+                              "field at a service-account JSON." % exc},
+                    status=401,
+                )
+            headers["Authorization"] = "Bearer " + token
+        else:
+            url = _chat_completions_url(cfg["base_url"])
+            if cfg["api_key"]:
+                headers["Authorization"] = "Bearer " + cfg["api_key"]
 
         timeout = aiohttp.ClientTimeout(total=300)
         try:
