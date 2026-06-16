@@ -1985,6 +1985,10 @@ function moveBoxLayer(id, direction){
     state.currentHelp=null; state.helpSplitRatio=0.34; state.leftPane=330; state.rightPane=390; state.canvasAreaHeight=520; state.elementsDockHeight=240; state.textareaHeights={}; state.layoutDrag=null; state.drag=null;
     ['high','aesthetics','lighting','styleField','background','globalColor','elColor'].forEach(id=>{ if($(id)) $(id).value=''; });
     $('medium').value='photograph'; $('captionType').value='photo';
+    // Hard reset also clears the persisted raw prompt + reference image.
+    if($('simplePrompt')) $('simplePrompt').value='';
+    try{ localStorage.removeItem(VLM_PROMPT_LS); }catch(e){}
+    clearRefImage();
     refreshAfterSettingsLoad();
     autoSave();
     setStatus('leftStatus',t('resetDone'),'ok');
@@ -2179,6 +2183,8 @@ function moveBoxLayer(id, direction){
   const VLM_MAXTOK_LS='okims_vlm_maxtokens';
   const BBOX_MAX_LS='okims_bbox_max';
   const BBOX_USEREF_LS='okims_bbox_useref';
+  const VLM_PROMPT_LS='scg_vlm_prompt';   // persist the raw "simple prompt" between sessions
+  const VLM_REFIMG_LS='scg_vlm_refimg';   // persist the resized reference image (data URL)
   const RULESET_LS={ global:'okims_ruleset_global', summary:'okims_ruleset_summary', bbox:'okims_ruleset_bbox' };
   const RULESET_TA={ global:'rulesetGlobal', summary:'rulesetSummary', bbox:'rulesetBbox' };
   const VLM_MAX_PIXELS=500000; // ~0.5 MP cap before sending
@@ -2480,22 +2486,38 @@ function moveBoxLayer(id, direction){
     });
   }
 
+  // Update the reference-image state + preview UI from a data URL.
+  function applyRefImage(dataUrl, persist){
+    vlmRefImage=dataUrl||null;
+    const prev=$('refPreview');
+    if(vlmRefImage){
+      if(prev){ prev.src=vlmRefImage; prev.hidden=false; }
+      if($('refPlaceholder')) $('refPlaceholder').hidden=true;
+      if($('refClear')) $('refClear').hidden=false;
+    }else{
+      if(prev){ prev.hidden=true; prev.removeAttribute('src'); }
+      if($('refPlaceholder')) $('refPlaceholder').hidden=false;
+      if($('refClear')) $('refClear').hidden=true;
+    }
+    if(persist){
+      try{ if(vlmRefImage) localStorage.setItem(VLM_REFIMG_LS, vlmRefImage); else localStorage.removeItem(VLM_REFIMG_LS); }
+      catch(e){ /* quota — image just won't persist this round */ }
+    }
+  }
+
   async function setRefImageFromFile(file){
     if(!file || !(file.type||'').startsWith('image/')){ setStatus('vlmStatus','That file is not an image.','warn'); return; }
     try{
       setStatus('vlmStatus','Processing image…','');
-      vlmRefImage=await vlmResizeImage(file);
-      const prev=$('refPreview'); if(prev){ prev.src=vlmRefImage; prev.hidden=false; }
-      $('refPlaceholder').hidden=true; $('refClear').hidden=false;
+      const dataUrl=await vlmResizeImage(file);
+      applyRefImage(dataUrl, true);
       setStatus('vlmStatus','Reference image ready (resized to ~0.5 MP).','ok');
     }catch(e){ setStatus('vlmStatus','Image processing failed: '+(e.message||e),'err'); }
   }
 
   function clearRefImage(){
-    vlmRefImage=null;
-    const prev=$('refPreview'); if(prev){ prev.hidden=true; prev.removeAttribute('src'); }
+    applyRefImage(null, true);
     if($('refFile')) $('refFile').value='';
-    $('refPlaceholder').hidden=false; $('refClear').hidden=true;
   }
 
   function vlmReprocessSystemPrompt(){
@@ -2770,6 +2792,14 @@ function moveBoxLayer(id, direction){
       drop.addEventListener('drop',(e)=>{ const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; if(f) setRefImageFromFile(f); });
     }
     if(clearBtn) clearBtn.addEventListener('click',(e)=>{ e.stopPropagation(); clearRefImage(); });
+    // Restore the raw prompt + reference image saved from a previous session.
+    const sp=$('simplePrompt');
+    if(sp){
+      const savedPrompt=localStorage.getItem(VLM_PROMPT_LS);
+      if(savedPrompt!=null && sp.value==='') sp.value=savedPrompt;
+      sp.addEventListener('input',()=>{ try{ localStorage.setItem(VLM_PROMPT_LS, sp.value); }catch(e){} });
+    }
+    try{ const savedImg=localStorage.getItem(VLM_REFIMG_LS); if(savedImg) applyRefImage(savedImg, false); }catch(e){}
     const enh=$('enhanceBtn'); if(enh) enh.addEventListener('click', runEnhance);
     const rep=$('reprocessBtn'); if(rep) rep.addEventListener('click', runReprocess);
     const fl=$('feelingLucky'); if(fl) fl.addEventListener('click', runFeelingLucky);
