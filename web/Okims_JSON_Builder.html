@@ -443,9 +443,11 @@
   @media(max-width:1280px){.slimToolbar{flex-wrap:wrap}.slimToolbar .toolDivider{display:none}}
 
   /* Send to ComfyUI & Close (pinned bottom-right of the right column) */
-  .sendCloseBar{display:flex;justify-content:flex-end;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+  .sendCloseBar{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
   .sendCloseBtn{background:linear-gradient(135deg,#2e9e5b,#3fb36b);border-color:#3fb36b;color:#fff;font-weight:800;padding:11px 16px;font-size:13px}
   .sendCloseBtn:hover{filter:brightness(1.08)}
+  .cancelCloseBtn{background:linear-gradient(135deg,#b23b3b,#cf4d4d);border-color:#cf4d4d;color:#fff;font-weight:800;padding:11px 16px;font-size:13px}
+  .cancelCloseBtn:hover{filter:brightness(1.08)}
 
   /* UI Configuration pane (relocated header controls) */
   #uiConfigMount .headerLeftControls,#uiConfigMount .headerCenterControls,#uiConfigMount .topControls{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:2px 0 8px;position:static}
@@ -720,6 +722,7 @@
     </div>
 
     <div class="sendCloseBar">
+      <button id="cancelCloseBtn" class="cancelCloseBtn" type="button" title="Close without sending any changes to the ComfyUI node">✕ Cancel</button>
       <button id="sendCloseBtn" class="sendCloseBtn" type="button" title="Send the JSON prompt to the ComfyUI node and close the builder">✔ Send to ComfyUI &amp; Close</button>
     </div>
   </section>
@@ -2931,6 +2934,8 @@ function moveBoxLayer(id, direction){
     // Send the JSON prompt to the ComfyUI node and close the builder (handled by the wrapper).
     const sc=$('sendCloseBtn');
     if(sc) sc.addEventListener('click',()=>{ try{ generateJson(false); }catch(e){} try{ if(window.parent && window.parent!==window) window.parent.postMessage({type:'okimsSendClose'},'*'); }catch(e){} });
+    const cc=$('cancelCloseBtn');
+    if(cc) cc.addEventListener('click',()=>{ try{ if(window.parent && window.parent!==window) window.parent.postMessage({type:'okimsClose'},'*'); }catch(e){} });
   })();
 
   window.ideogram4BuilderAPI = {
