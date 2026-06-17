@@ -1202,8 +1202,13 @@
     }
   }
   function updateStyleLabel(){
-    const key = $('captionType').value==='photo' ? 'camera' : 'style';
-    $('styleLabel').querySelector('span').textContent = t(key);
+    // The camera/lens field only makes sense for photographic output. In art mode
+    // we hide it entirely (and omit it from JSON) so it doesn't duplicate the
+    // single Style / Aesthetics field. The label stays "Camera / Photo".
+    const isPhoto = $('captionType').value==='photo';
+    const label=$('styleLabel'), field=$('styleField');
+    if(label) label.style.display = isPhoto ? '' : 'none';
+    if(field) field.style.display = isPhoto ? '' : 'none';
   }
 
   function boxToCss(b){ const [y1,x1,y2,x2]=b.bbox; return {left:x1/10+'%', top:y1/10+'%', width:(x2-x1)/10+'%', height:(y2-y1)/10+'%'}; }
@@ -1850,7 +1855,7 @@ function moveBoxLayer(id, direction){
     const type=$('captionType').value; const style={};
     style.aesthetics=$('aesthetics').value.trim(); style.lighting=$('lighting').value.trim();
     if(type==='photo'){ style.photo=$('styleField').value.trim(); style.medium=$('medium').value.trim()||'photograph'; }
-    else { style.medium=$('medium').value.trim()||'illustration'; style.art_style=$('styleField').value.trim(); }
+    else { style.medium=$('medium').value.trim()||'illustration'; }
     if(state.globalPalette.length) style.color_palette=[...state.globalPalette]; cap.style_description=style;
     const comp={}; comp.background=$('background').value.trim(); comp.elements=state.boxes.map(b=>{ const e={}; e.type=b.type; e.bbox=[...b.bbox]; if(b.type==='text') e.text=b.text||''; e.desc=b.desc||''; if(b.palette&&b.palette.length) e.color_palette=[...b.palette]; return e; }); cap.compositional_deconstruction=comp;
     cap.render=computeRenderDims();
