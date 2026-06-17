@@ -450,6 +450,39 @@
   .canvasOuter.drawArming{cursor:crosshair}
   .canvasOuter.drawArming #stage{cursor:crosshair}
   #addFullBox.active{outline:2px solid var(--accent);outline-offset:1px;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 28%,transparent)}
+
+  /* ============================================================
+     Tablet / touch friendliness (iPad Safari)
+     ------------------------------------------------------------
+     Goals: (1) never let the page scroll horizontally,
+     (2) collapse + wrap everything on narrower screens,
+     (3) stop iOS Safari from auto-zooming when an input is
+         focused (font-size < 16px triggers it and shifts the
+         whole layout, which reads as "the layout is all wrong").
+     ============================================================ */
+  html,body{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  .canvasOuter{-webkit-overflow-scrolling:touch}
+
+  @media (max-width:1280px){
+    /* Guard against infinite horizontal scroll. Only applied here because the
+       sticky panels (desktop only) need body to stay a non-scroll container. */
+    html,body{max-width:100%;overflow-x:hidden}
+    main,main>section,.panel,.canvasWrap,.agentConfig,.jsonOut,.exampleArea,.bboxAgentBar,.slimToolbar{max-width:100%}
+    main{padding:calc(8px * var(--ui))}
+    .toolbar,.slimToolbar,.bboxAgentBar,.controlCluster,.canvasControlGroup{flex-wrap:wrap}
+    .canvasCol .canvasOuter{height:min(60vh,520px)}
+  }
+
+  /* Touch devices: enlarge tap targets + kill the focus-zoom. */
+  @media (pointer:coarse){
+    input,select,textarea,.jsonOut,.exampleArea{font-size:16px !important}
+    button,.iconBtn,.langBtn,.canvasToolBtn,.layerBtn,.flagBtn,.themePresetBtn{min-height:36px}
+    .layerBtn{min-width:32px}
+    .agentTab{min-height:38px}
+    /* Bigger resize grabbers so panes are draggable with a finger. */
+    .textareaResizeBar,.dockSplitter{height:16px}
+    .dockSplitter::before{height:5px}
+  }
 </style>
 </head>
 <body data-theme="mocha">
