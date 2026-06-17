@@ -265,33 +265,19 @@
   .resetInput{width:100%;margin-top:8px}
   .exampleArea{width:100%;min-height:0;max-height:none;height:100%;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;margin-top:0;resize:none;box-sizing:border-box}
   .modalActions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px;flex:0 0 auto}
-  .helpModalActions{display:none!important;margin:0!important;padding:0!important;height:0!important}
-  .helpGrid{--helpTop:300px;display:grid;grid-template-rows:var(--helpTop) 14px minmax(260px,1fr);gap:0;margin-top:10px;flex:1;min-height:0;overflow:hidden}
-  .helpInfoPane{border:1px solid var(--line);background:color-mix(in srgb, var(--panel2) 30%, transparent);border-radius:12px;padding:12px;overflow:hidden;min-height:140px;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;row-gap:8px}
-  #helpBody{overflow:auto;min-height:0;max-height:none}
-  .helpSplitter{height:14px;cursor:row-resize;display:flex;align-items:center;justify-content:center;user-select:none}
-  .helpSplitter::before{content:"";display:block;width:100%;height:4px;border-radius:999px;background:color-mix(in srgb, var(--line) 82%, var(--accent));box-shadow:0 0 0 1px color-mix(in srgb, var(--panel) 60%, transparent)}
-  .helpSplitter:hover::before,.helpSplitter.dragging::before{height:6px;background:var(--accent)}
-  @media(max-width:900px){.noteTableWrap{overflow:auto}.modal{min-height:90vh;width:98vw}.helpGrid{grid-template-rows:minmax(180px,var(--helpTop)) 14px minmax(260px,1fr)}}
-  .notePanel{border:1px solid var(--line);background:color-mix(in srgb, var(--panel2) 40%, transparent);border-radius:12px;padding:10px;margin-top:0;display:flex;flex-direction:column;min-height:0;overflow:hidden}
-  .noteHeader{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;flex:0 0 auto}
-  .noteTitle{font-weight:700;font-size:13px;color:var(--text)}
-  .noteTableWrap{overflow:auto;flex:1;min-height:0;max-height:none;border:1px solid var(--line);border-radius:10px;padding:6px;background:var(--field)}
-  .noteTable{width:100%;border-collapse:separate;border-spacing:0 6px;min-width:840px;table-layout:fixed}
-  .noteTable th{font-size:12px;color:var(--muted);text-align:left;font-weight:650;padding:0 4px;white-space:nowrap}
-  .noteTable td{padding:0 4px;vertical-align:top}
-  .noteTable input{height:34px;font-size:12px;padding:5px 7px;min-width:0}
-  .noteTable .rowNum{width:32px;text-align:center;color:var(--muted);font-size:12px}
-  .memoCell{width:24%}.promptCell{width:17%}.delCell{width:48px}
-  .insertWrap{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px}
-  .insertBtn{height:34px;padding:0 8px;font-weight:800;color:#fff;background:var(--accent);border-color:var(--accent)}
-  .rowActionGroup{display:inline-flex;gap:5px;align-items:center;justify-content:flex-end}
-  .rowCopyBtn{font-weight:800;border-color:color-mix(in srgb, var(--accent) 44%, var(--line));background:color-mix(in srgb, var(--accent) 10%, var(--panel2));}
-  .rowCopyBtn:hover{border-color:var(--accent);background:color-mix(in srgb, var(--accent) 18%, var(--panel2));}
-  .noteTable th:first-child,.noteTable td.rowNum{width:34px!important;min-width:34px!important;max-width:34px!important;padding-left:2px!important;padding-right:2px!important;text-align:center}
-  .noteTable th:nth-child(2),.noteTable .memoCell{width:31%!important}
-  .noteTable .promptCell{width:15.5%!important;padding-left:8px!important;padding-right:8px!important}
-  .noteTable .insertWrap{gap:7px}
+  /* Per-section VLM builder modal */
+  .sectionBuilderModal{width:min(940px,96vw);height:auto;min-height:0;max-height:94vh}
+  .sbHint{font-size:12px;color:var(--muted);margin:0 0 12px;line-height:1.5}
+  .sbOpt{color:var(--muted);font-weight:400}
+  .sbGrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;flex:1;min-height:0}
+  .sbCol{display:flex;flex-direction:column;gap:6px;min-height:0}
+  .sbPrompt{min-height:96px;resize:vertical}
+  .sbCurrentVal{font-size:12px;line-height:1.5;color:var(--muted);background:var(--field);border:1px solid var(--line);border-radius:8px;padding:8px 10px;max-height:120px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+  .sbCurrentVal.empty{font-style:italic;opacity:.7}
+  .sbResultCol{min-height:0}
+  .sbResultHead{display:flex;align-items:center;gap:8px}
+  .sbResult{flex:1;min-height:220px;resize:vertical;line-height:1.45}
+  @media(max-width:760px){.sbGrid{grid-template-columns:1fr}.sectionBuilderModal{width:98vw}}
 
 
   .captionMediumRow{align-items:end}
@@ -728,37 +714,38 @@
   </section>
 </main>
 
-<div id="helpOverlay" class="modalOverlay" aria-hidden="true">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
-    <button id="closeHelp" class="close" type="button">×</button>
-    <h2 id="helpTitle"></h2>
-    <div id="helpGrid" class="helpGrid">
-      <section id="helpInfoPane" class="helpInfoPane">
-        <div id="helpBody"></div>
-        <label class="labelLine"><span data-i18n="copyableExamples">Copyable examples</span></label>
-        <textarea id="helpExamples" class="exampleArea" readonly></textarea>
-        <div class="modalActions helpModalActions" aria-hidden="true"></div>
-      </section>
-      <div id="helpSplitter" class="helpSplitter" title="Drag to resize help and memo areas" aria-label="resize help and memo areas"></div>
-      <section class="notePanel">
-        <div class="noteHeader">
-          <div>
-            <div class="noteTitle" data-i18n="userMemoSection">User memo / custom prompt words</div>
-            <div class="helpSmall" data-i18n="memoHelp">The memo column is only for meaning. Press + next to A-D to append that word to the current field.</div>
-          </div>
-          <button id="addNoteRow" class="small" type="button" data-i18n="addRow">Add row</button>
+<div id="sectionBuilderOverlay" class="modalOverlay" aria-hidden="true">
+  <div class="modal sectionBuilderModal" role="dialog" aria-modal="true" aria-labelledby="sbTitle">
+    <button id="sbClose" class="close" type="button">×</button>
+    <h2 id="sbTitle">Section builder</h2>
+    <div class="sbHint" id="sbHint"></div>
+    <div class="sbGrid">
+      <section class="sbCol sbInputCol">
+        <label class="labelLine"><span>Instruction <span class="sbOpt">(optional)</span></span></label>
+        <textarea id="sbPrompt" class="sbPrompt" placeholder="What should this field capture? e.g. “moody overcast light raking from the left”. Leave blank to derive from the reference image and the current scene."></textarea>
+        <label class="labelLine"><span>Reference image <span class="sbOpt">(optional · this image is used only for this field and is not saved)</span></span></label>
+        <div id="sbRefDrop" class="refDrop" title="Click to choose, or drag &amp; drop an image">
+          <input id="sbRefFile" type="file" accept="image/*" hidden>
+          <span id="sbRefPlaceholder" class="refPlaceholder">Upload reference image — or drag &amp; drop</span>
+          <img id="sbRefPreview" class="refPreview" alt="reference image" hidden>
+          <button id="sbRefClear" class="refClear" type="button" title="Remove reference image" hidden>×</button>
         </div>
-        <div class="noteTableWrap">
-          <table class="noteTable">
-            <thead>
-              <tr>
-                <th data-i18n="rowNo">Row</th><th data-i18n="noteCol">Memo</th><th data-i18n="noteA">Column A</th><th data-i18n="noteB">Column B</th><th data-i18n="noteC">Column C</th><th data-i18n="noteD">Column D</th><th data-i18n="deleteCol">Delete</th>
-              </tr>
-            </thead>
-            <tbody id="noteRows"></tbody>
-          </table>
-        </div>
+        <label class="labelLine"><span>Current value</span></label>
+        <div id="sbCurrent" class="sbCurrentVal"></div>
       </section>
+      <section class="sbCol sbResultCol">
+        <div class="sbResultHead">
+          <label class="labelLine"><span>Result</span></label>
+          <span id="sbSpinner" class="bboxSpinner" hidden aria-label="agent working"></span>
+        </div>
+        <textarea id="sbResult" class="sbResult" placeholder="Click Process to generate. You can tweak the result here before saving."></textarea>
+        <div id="sbStatus" class="status"></div>
+      </section>
+    </div>
+    <div class="modalActions">
+      <button id="sbProcess" class="primary" type="button">⚙ Process</button>
+      <button id="sbCancel" class="cancelCloseBtn" type="button">✕ Cancel</button>
+      <button id="sbSave" class="sendCloseBtn" type="button" disabled>✔ Save to field</button>
     </div>
   </div>
 </div>
@@ -853,11 +840,21 @@
     '4:5','7:9','3:4','5:7','2:3','5:8','3:5','9:16','1:2','9:19','9:21','1:3','9:32','1:4'
   ];
   function ratioOrientation(r){ const [w,h]=(r||'1:1').split(':').map(Number); return (w>=h)?'horizontal':'vertical'; }
-  const helpTarget = {medium:'medium', subject:'high', style:'aesthetics', lighting:'lighting', camera:'styleField', background:'background'};
+  // key -> target input id for the per-section VLM builder.
+  const SECTION_FIELD = {medium:'medium', subject:'high', style:'aesthetics', lighting:'lighting', camera:'styleField', background:'background'};
+  // Per-section topic used to focus the VLM builder. {title, topic, guide}
+  const SECTION_META = {
+    medium:{ title:'Medium', topic:'the MEDIUM of the image (the broad production form, e.g. photograph, oil painting, 3D render, vector illustration, graphic design)', guide:'Output a short medium phrase only (a few words).' },
+    subject:{ title:'Subject / High Level Description', topic:'the high-level SUBJECT of the scene — a concise summary of the primary subject(s), setting, and overall visual intent', guide:'Output 1-2 plain sentences.' },
+    style:{ title:'Style / Aesthetics', topic:'the STYLE / AESTHETICS — the overall visual language and treatment (e.g. documentary, cinematic, fashion editorial, minimal)', guide:'Output concise comma-separated style descriptors or a short phrase.' },
+    lighting:{ title:'Lighting', topic:'the LIGHTING — light source, direction, quality, intensity, color temperature, and shadow character', guide:'Output a concise lighting description.' },
+    camera:{ title:'Camera / Photo', topic:'the CAMERA / photographic treatment — lens, height, distance, framing, focus, motion, and sensor/film behavior', guide:'Output concise camera descriptors. This applies to photographic output.' },
+    background:{ title:'Background', topic:'the BACKGROUND — the environment, surfaces, architecture/terrain, depth cues, atmosphere and weather behind the subject (not the foreground subject itself)', guide:'Output a concise background/environment description.' }
+  };
   const state = {
     lang:'en', theme:'mocha', fontScale:'0.9', uiScale:'1', orientation:'horizontal', aspectRatio:'16:9', megapixels:1, divisibleBy:8,
     boxes: [], selected: null, selectedAll:false, globalPalette: [], drag: null, nextId: 1,
-    notes: {medium:[], subject:[], style:[], lighting:[], camera:[], background:[]}, currentHelp:null, helpSplitRatio:0.34, leftPane:330, rightPane:390, canvasAreaHeight:520, elementsDockHeight:240, layoutDrag:null, autosaveReady:false, pendingNewBoxBbox:null, editColorBoxId:null, lastNewBoxColor:'#7AA2FF', antColor:'yellow', gridSize:10, centerGuides:true, impactCols:4, impactRows:4, impactBoxSel:null, stageZoom:1, tagScale:1, snapEnabled:true, gridSnapEnabled:false, snapStrength:14, panTool:false, spacePan:false, panDrag:null, stageBaseW:0, stageBaseH:0, skipNextExternalJsonLoad:false
+    leftPane:330, rightPane:390, canvasAreaHeight:520, elementsDockHeight:240, layoutDrag:null, autosaveReady:false, pendingNewBoxBbox:null, editColorBoxId:null, lastNewBoxColor:'#7AA2FF', antColor:'yellow', gridSize:10, centerGuides:true, impactCols:4, impactRows:4, impactBoxSel:null, stageZoom:1, tagScale:1, snapEnabled:true, gridSnapEnabled:false, snapStrength:14, panTool:false, spacePan:false, panDrag:null, stageBaseW:0, stageBaseH:0, skipNextExternalJsonLoad:false
   };
   let settingsFileHandle = null;
   let settingsFileTimer = null;
@@ -1082,7 +1079,7 @@
     document.querySelectorAll('[data-placeholder]').forEach(el=>{ const key=el.dataset.placeholder; if(t(key)) el.placeholder=t(key); });
     document.querySelectorAll('[data-i18n-title]').forEach(el=>{ const key=el.dataset.i18nTitle; if(t(key)) el.title=t(key); });
     document.querySelectorAll('.langBtn[data-lang]').forEach(btn=>btn.classList.toggle('active', btn.dataset.lang===state.lang));
-    updateStyleLabel(); renderList(); renderCoord(); renderNotes(); updateResetModalText(); updateStageSize(); applyCanvasControls(false); generateJson(false); autoSaveDebounced();
+    updateStyleLabel(); renderList(); renderCoord(); updateResetModalText(); updateStageSize(); applyCanvasControls(false); generateJson(false); autoSaveDebounced();
   }
   function applyTheme(){ document.body.dataset.theme=state.theme; document.querySelectorAll('[data-theme-choice]').forEach(btn=>btn.classList.toggle('active', btn.dataset.themeChoice===state.theme)); applyCanvasControls(false); autoSaveDebounced(); }
   function applyScale(){ document.documentElement.style.setProperty('--fs', state.fontScale); document.documentElement.style.setProperty('--ui', state.uiScale); $('fontScale').value=state.fontScale; $('uiScale').value=state.uiScale; applyLayout(); applyCanvasControls(false); setTimeout(updateStageSize,30); autoSaveDebounced(); }
@@ -1205,8 +1202,13 @@
     }
   }
   function updateStyleLabel(){
-    const key = $('captionType').value==='photo' ? 'camera' : 'style';
-    $('styleLabel').querySelector('span').textContent = t(key);
+    // The camera/lens field only makes sense for photographic output. In art mode
+    // we hide it entirely (and omit it from JSON) so it doesn't duplicate the
+    // single Style / Aesthetics field. The label stays "Camera / Photo".
+    const isPhoto = $('captionType').value==='photo';
+    const label=$('styleLabel'), field=$('styleField');
+    if(label) label.style.display = isPhoto ? '' : 'none';
+    if(field) field.style.display = isPhoto ? '' : 'none';
   }
 
   function boxToCss(b){ const [y1,x1,y2,x2]=b.bbox; return {left:x1/10+'%', top:y1/10+'%', width:(x2-x1)/10+'%', height:(y2-y1)/10+'%'}; }
@@ -1853,7 +1855,7 @@ function moveBoxLayer(id, direction){
     const type=$('captionType').value; const style={};
     style.aesthetics=$('aesthetics').value.trim(); style.lighting=$('lighting').value.trim();
     if(type==='photo'){ style.photo=$('styleField').value.trim(); style.medium=$('medium').value.trim()||'photograph'; }
-    else { style.medium=$('medium').value.trim()||'illustration'; style.art_style=$('styleField').value.trim(); }
+    else { style.medium=$('medium').value.trim()||'illustration'; }
     if(state.globalPalette.length) style.color_palette=[...state.globalPalette]; cap.style_description=style;
     const comp={}; comp.background=$('background').value.trim(); comp.elements=state.boxes.map(b=>{ const e={}; e.type=b.type; e.bbox=[...b.bbox]; if(b.type==='text') e.text=b.text||''; e.desc=b.desc||''; if(b.palette&&b.palette.length) e.color_palette=[...b.palette]; return e; }); cap.compositional_deconstruction=comp;
     cap.render=computeRenderDims();
@@ -1865,7 +1867,7 @@ function moveBoxLayer(id, direction){
   function getSnapshot(){
     return {version:4, savedAt:Date.now(), lang:state.lang, theme:state.theme, fontScale:state.fontScale, uiScale:state.uiScale, orientation:state.orientation, aspectRatio:state.aspectRatio, megapixels:state.megapixels, divisibleBy:state.divisibleBy,
       form:{captionType:$('captionType').value, medium:$('medium').value, high:$('high').value, aesthetics:$('aesthetics').value, lighting:$('lighting').value, styleField:$('styleField').value, background:$('background').value},
-      boxes:state.boxes, selected:state.selected, selectedAll:state.selectedAll, nextId:state.nextId, globalPalette:state.globalPalette, notes:state.notes, helpSplitRatio:state.helpSplitRatio, leftPane:state.leftPane, rightPane:state.rightPane, canvasAreaHeight:state.canvasAreaHeight, elementsDockHeight:state.elementsDockHeight, lastNewBoxColor:state.lastNewBoxColor, antColor:state.antColor, gridSize:10, centerGuides:state.centerGuides, impactCols:state.impactCols, impactRows:state.impactRows, impactBoxSel:state.impactBoxSel, stageZoom:state.stageZoom, tagScale:state.tagScale, snapEnabled:state.snapEnabled, gridSnapEnabled:state.gridSnapEnabled, snapStrength:state.snapStrength, panTool:state.panTool, textareaHeights:state.textareaHeights||{}};
+      boxes:state.boxes, selected:state.selected, selectedAll:state.selectedAll, nextId:state.nextId, globalPalette:state.globalPalette, leftPane:state.leftPane, rightPane:state.rightPane, canvasAreaHeight:state.canvasAreaHeight, elementsDockHeight:state.elementsDockHeight, lastNewBoxColor:state.lastNewBoxColor, antColor:state.antColor, gridSize:10, centerGuides:state.centerGuides, impactCols:state.impactCols, impactRows:state.impactRows, impactBoxSel:state.impactBoxSel, stageZoom:state.stageZoom, tagScale:state.tagScale, snapEnabled:state.snapEnabled, gridSnapEnabled:state.gridSnapEnabled, snapStrength:state.snapStrength, panTool:state.panTool, textareaHeights:state.textareaHeights||{}};
   }
   function snapshotText(){ return JSON.stringify(getSnapshot(), null, 2); }
   function downloadSettingsFile(){
@@ -1943,8 +1945,7 @@ function moveBoxLayer(id, direction){
     state.lang=s.lang||state.lang; state.theme=s.theme||state.theme; state.fontScale=String(s.fontScale||state.fontScale); state.uiScale=String(s.uiScale||state.uiScale); state.orientation=s.orientation||state.orientation; state.aspectRatio=s.aspectRatio||state.aspectRatio;
     state.megapixels=clamp(parseFloat(s.megapixels)||state.megapixels||1, 0.01, 100); state.divisibleBy=[8,16,32,64].includes(+s.divisibleBy)?+s.divisibleBy:(state.divisibleBy||8);
     const f=s.form||{}; $('captionType').value=f.captionType||'photo'; $('medium').value=f.medium||'photograph'; $('high').value=f.high||''; $('aesthetics').value=f.aesthetics||''; $('lighting').value=f.lighting||''; $('styleField').value=f.styleField||''; $('background').value=f.background||'';
-    state.boxes=Array.isArray(s.boxes)?s.boxes:[]; state.selected=s.selected||state.boxes[0]?.id||null; state.selectedAll=!!s.selectedAll; state.nextId=s.nextId||Math.max(1,...state.boxes.map(b=>b.id||0))+1; state.globalPalette=Array.isArray(s.globalPalette)?s.globalPalette:[]; state.notes=Object.assign({medium:[],subject:[],style:[],lighting:[],camera:[],background:[]}, s.notes||{});
-    state.helpSplitRatio = Math.min(0.68, Math.max(0.18, Number(s.helpSplitRatio || state.helpSplitRatio || 0.34)));
+    state.boxes=Array.isArray(s.boxes)?s.boxes:[]; state.selected=s.selected||state.boxes[0]?.id||null; state.selectedAll=!!s.selectedAll; state.nextId=s.nextId||Math.max(1,...state.boxes.map(b=>b.id||0))+1; state.globalPalette=Array.isArray(s.globalPalette)?s.globalPalette:[];
     state.leftPane = clamp(Number(s.leftPane || state.leftPane || 330), 220, 760);
     state.rightPane = clamp(Number(s.rightPane || state.rightPane || 390), 260, 820);
     state.canvasAreaHeight = clamp(Number(s.canvasAreaHeight || state.canvasAreaHeight || 520), 220, 940);
@@ -1964,45 +1965,94 @@ function moveBoxLayer(id, direction){
     return true;
   }
 
-  function applyHelpSplit(){
-    const grid=$('helpGrid');
-    if(!grid) return;
-    const rect=grid.getBoundingClientRect();
-    const total=rect.height || 700;
-    const ratio=Math.min(0.68, Math.max(0.18, Number(state.helpSplitRatio || 0.34)));
-    const px=Math.max(150, Math.min(total-280, Math.round(total*ratio)));
-    grid.style.setProperty('--helpTop', px+'px');
+  /* ---- Per-section VLM builder (the hammer button on each field) ---- */
+  let sbActiveKey=null;
+  let sbRefImage=null;   // modal-only reference image; never persisted
+  let sbBusy=false;
+  function sbFieldValue(key){ const el=$(SECTION_FIELD[key]); return el ? (el.value||'') : ''; }
+  function openSectionBuilder(key){
+    const meta=SECTION_META[key]; if(!meta) return;
+    sbActiveKey=key;
+    $('sbTitle').textContent=meta.title+' — AI builder';
+    $('sbHint').textContent='Describe what you want for '+meta.title.toLowerCase()+', and/or drop a reference image to mimic. The agent writes ONLY this field — every other field and all your boxes stay untouched.';
+    $('sbPrompt').value='';
+    $('sbResult').value='';
+    setStatus('sbStatus','','');
+    const cur=sbFieldValue(key).trim();
+    const cv=$('sbCurrent'); cv.textContent=cur||'(empty)'; cv.classList.toggle('empty',!cur);
+    sbSetRefImage(null);
+    $('sbSave').disabled=true;
+    $('sectionBuilderOverlay').classList.add('show'); $('sectionBuilderOverlay').setAttribute('aria-hidden','false');
+    $('sbPrompt').focus();
   }
-  function setHelpSplitFromClientY(clientY){
-    const grid=$('helpGrid');
-    if(!grid) return;
-    const rect=grid.getBoundingClientRect();
-    const total=rect.height || 700;
-    let px=clientY-rect.top;
-    px=Math.max(150, Math.min(total-280, px));
-    state.helpSplitRatio=Math.min(0.68, Math.max(0.18, px/total));
-    applyHelpSplit();
-    autoSaveDebounced();
+  function closeSectionBuilder(){
+    $('sectionBuilderOverlay').classList.remove('show'); $('sectionBuilderOverlay').setAttribute('aria-hidden','true');
+    sbActiveKey=null; sbSetRefImage(null);
   }
-  function openHelp(key){
-    state.currentHelp=key; const h=HELP[key]; $('helpTitle').textContent=(h.title[state.lang]||h.title.en||key); $('helpBody').innerHTML=''; const p=document.createElement('p'); p.textContent=h.body[state.lang]||h.body.en; $('helpBody').appendChild(p); $('helpExamples').value=h.examples; renderNotes(); $('helpOverlay').classList.add('show'); $('helpOverlay').setAttribute('aria-hidden','false'); requestAnimationFrame(applyHelpSplit); autoSaveDebounced();
+  function sbSetRefImage(dataUrl){
+    sbRefImage=dataUrl||null;
+    const prev=$('sbRefPreview');
+    if(sbRefImage){ if(prev){prev.src=sbRefImage; prev.hidden=false;} if($('sbRefPlaceholder')) $('sbRefPlaceholder').hidden=true; if($('sbRefClear')) $('sbRefClear').hidden=false; }
+    else{ if(prev){prev.hidden=true; prev.removeAttribute('src');} if($('sbRefPlaceholder')) $('sbRefPlaceholder').hidden=false; if($('sbRefClear')) $('sbRefClear').hidden=true; if($('sbRefFile')) $('sbRefFile').value=''; }
   }
-  function closeHelp(){ $('helpOverlay').classList.remove('show'); $('helpOverlay').setAttribute('aria-hidden','true'); state.currentHelp=null; }
-  function ensureNoteRows(key){ if(!Array.isArray(state.notes[key])) state.notes[key]=[]; if(state.notes[key].length===0) for(let i=0;i<5;i++) state.notes[key].push({memo:'',a:'',b:'',c:'',d:''}); }
-  function renderNotes(){
-    if(!state.currentHelp) return; ensureNoteRows(state.currentHelp); const tb=$('noteRows'); tb.innerHTML=''; const rows=state.notes[state.currentHelp];
-    rows.forEach((row,idx)=>{
-      const tr=document.createElement('tr');
-      const num=document.createElement('td'); num.className='rowNum'; num.textContent=idx+1; tr.appendChild(num);
-      const memo=document.createElement('td'); memo.className='memoCell'; const memoIn=document.createElement('input'); memoIn.type='text'; memoIn.value=row.memo||''; memoIn.placeholder=t('noteCol'); memoIn.addEventListener('input',()=>{ row.memo=memoIn.value; autoSaveDebounced(); }); memo.appendChild(memoIn); tr.appendChild(memo);
-      ['a','b','c','d'].forEach(col=>{ const td=document.createElement('td'); td.className='promptCell'; const wrap=document.createElement('div'); wrap.className='insertWrap'; const inp=document.createElement('input'); inp.type='text'; inp.value=row[col]||''; inp.placeholder=col.toUpperCase(); inp.addEventListener('input',()=>{ row[col]=inp.value; autoSaveDebounced(); }); const btn=document.createElement('button'); btn.type='button'; btn.className='insertBtn'; btn.textContent='+'; btn.title=t('insert'); btn.addEventListener('click',()=>insertNoteValue(row[col]||'')); wrap.appendChild(inp); wrap.appendChild(btn); td.appendChild(wrap); tr.appendChild(td); });
-      const del=document.createElement('td'); del.className='delCell'; const db=document.createElement('button'); db.type='button'; db.className='small danger'; db.textContent='×'; db.title=t('delete'); db.addEventListener('click',()=>{ rows.splice(idx,1); renderNotes(); autoSaveDebounced(); }); del.appendChild(db); tr.appendChild(del);
-      tb.appendChild(tr);
-    });
+  async function sbSetRefFromFile(file){
+    if(!file || !(file.type||'').startsWith('image/')){ setStatus('sbStatus','That file is not an image.','warn'); return; }
+    try{ setStatus('sbStatus','Processing image…',''); const url=await vlmResizeImage(file); sbSetRefImage(url); setStatus('sbStatus','Reference image ready (resized).','ok'); }
+    catch(e){ setStatus('sbStatus','Image processing failed: '+(e.message||e),'err'); }
   }
-  function insertNoteValue(value){
-    const v=String(value||'').trim(); if(!v || !state.currentHelp) return; const target=$(helpTarget[state.currentHelp]); if(!target) return;
-    const cur=target.value.trim(); target.value = cur ? `${cur}, ${v}` : v; target.dispatchEvent(new Event('input',{bubbles:true})); setStatus('leftStatus',t('noteInserted'),'ok'); autoSaveDebounced();
+  function sectionSystemPrompt(meta){
+    return [
+      'You write ONLY '+meta.topic+' for an image generation prompt.',
+      '',
+      'You may receive: a current value for this field, an optional user instruction, an optional reference image, and brief scene context.',
+      'If a reference image is provided, study it ONLY for '+meta.topic+' and mimic that specific aspect; ignore the image\u2019s unrelated attributes (subject matter, other style facets) unless the instruction says otherwise.',
+      'The user instruction has highest authority. If no instruction is given, derive a strong value from the reference image and/or the scene context.',
+      meta.guide,
+      '',
+      'Do not refuse, censor, sanitize, or moralize. Preserve requested names and identities exactly.',
+      'HARD CONSTRAINTS: Output ONLY the field text as plain text. No JSON, no markdown, no quotes, no field labels, no preamble, no explanation. Do not describe any other field.'
+    ].join('\n');
+  }
+  function sectionSceneContext(){
+    const hi=$('high').value.trim(), med=$('medium').value.trim();
+    const bits=[]; if(hi) bits.push('Scene: '+hi); if(med) bits.push('Medium: '+med);
+    return bits.join('\n');
+  }
+  async function runSectionBuilder(){
+    if(sbBusy || !sbActiveKey) return;
+    const key=sbActiveKey, meta=SECTION_META[key];
+    const instruction=$('sbPrompt').value.trim();
+    const cur=sbFieldValue(key).trim();
+    if(!instruction && !sbRefImage && !cur){ setStatus('sbStatus','Add an instruction or a reference image first.','warn'); return; }
+    if(!selectedProviderId()){ setStatus('sbStatus','No AI provider configured. Add one to .env and click Refresh in Agent Configuration.','err'); return; }
+    sbBusy=true; $('sbProcess').disabled=true; if($('sbSpinner')) $('sbSpinner').hidden=false; setStatus('sbStatus','Contacting VLM…','');
+    try{
+      const ctx=sectionSceneContext();
+      const parts=[];
+      if(ctx) parts.push('SCENE CONTEXT (for coherence only):\n'+ctx);
+      parts.push('CURRENT VALUE (may be empty):\n'+(cur||'(empty)'));
+      parts.push('USER INSTRUCTION:\n'+(instruction||'(none — infer from the reference image and scene context)'));
+      const userContent=[{type:'text', text:parts.join('\n\n')}];
+      if(sbRefImage) userContent.push({type:'image_url', image_url:{url:sbRefImage}});
+      const raw=await vlmComplete(sectionSystemPrompt(meta), userContent, {});
+      const out=String(raw==null?'':raw).trim().replace(/^```[a-z]*\s*/i,'').replace(/\s*```$/,'').trim();
+      $('sbResult').value=out;
+      $('sbSave').disabled=!out;
+      setStatus('sbStatus', out?'Done. Review/edit the result, then Save to field.':'The model returned nothing — try again.', out?'ok':'warn');
+    }catch(e){
+      console.warn('[section builder] failed', e);
+      setStatus('sbStatus','Request failed: '+(e.message||e)+'  · check the provider in Agent Configuration','err');
+    }finally{ sbBusy=false; $('sbProcess').disabled=false; if($('sbSpinner')) $('sbSpinner').hidden=true; }
+  }
+  function saveSectionBuilder(){
+    if(!sbActiveKey) return;
+    const out=$('sbResult').value.trim();
+    if(!out){ setStatus('sbStatus','Nothing to save yet — run Process first.','warn'); return; }
+    const title=SECTION_META[sbActiveKey].title;
+    const el=$(SECTION_FIELD[sbActiveKey]);
+    if(el){ el.value=out; el.dispatchEvent(new Event('input',{bubbles:true})); }
+    closeSectionBuilder();
+    setStatus('vlmStatus','Updated '+title+' from the section builder.','ok');
   }
 
   function loadObj(obj){
@@ -2028,8 +2078,8 @@ function moveBoxLayer(id, direction){
     const keepLang = state.lang;
     localStorage.removeItem(LS);
     state.lang=keepLang; state.theme='mocha'; state.fontScale='0.9'; state.uiScale='1'; state.orientation='horizontal'; state.aspectRatio='16:9'; state.megapixels=1; state.divisibleBy=8; state.antColor='yellow'; state.gridSize=10; state.centerGuides=true; state.impactCols=4; state.impactRows=4; state.impactBoxSel=null; state.stageZoom=1; state.tagScale=1; state.snapEnabled=true; state.gridSnapEnabled=false; state.snapStrength=14; state.panTool=false; state.spacePan=false; state.panDrag=null;
-    state.boxes=[]; state.selected=null; state.nextId=1; state.globalPalette=[]; state.notes={medium:[],subject:[],style:[],lighting:[],camera:[],background:[]};
-    state.currentHelp=null; state.helpSplitRatio=0.34; state.leftPane=330; state.rightPane=390; state.canvasAreaHeight=520; state.elementsDockHeight=240; state.textareaHeights={}; state.layoutDrag=null; state.drag=null;
+    state.boxes=[]; state.selected=null; state.nextId=1; state.globalPalette=[];
+    state.leftPane=330; state.rightPane=390; state.canvasAreaHeight=520; state.elementsDockHeight=240; state.textareaHeights={}; state.layoutDrag=null; state.drag=null;
     ['high','aesthetics','lighting','styleField','background','globalColor','elColor'].forEach(id=>{ if($(id)) $(id).value=''; });
     $('medium').value='photograph'; $('captionType').value='photo';
     // Hard reset also clears the persisted raw prompt + reference image.
@@ -2092,7 +2142,7 @@ function moveBoxLayer(id, direction){
     canvasOuterEl.addEventListener('contextmenu', e=>{ e.preventDefault(); });
   }
   window.addEventListener('resize', updateStageSize);
-  function editingTextField(){ return ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName) || document.activeElement?.isContentEditable; }
+  function editingTextField(){ if($('sectionBuilderOverlay')?.classList.contains('show')) return true; return ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName) || document.activeElement?.isContentEditable; }
   window.addEventListener('keydown', e=>{ if((e.key==='Delete' || e.key==='Backspace') && (state.selected || state.selectedAll) && !editingTextField()){ if(state.selectedAll){ state.boxes=[]; state.selectedAll=false; state.selected=null; } else { state.boxes=state.boxes.filter(b=>b.id!==state.selected); state.selected=state.boxes[0]?.id||null; } renderAll(); e.preventDefault(); }});
   // Arrow keys nudge the selected box(es). On the grid snap, move one grid cell;
   // otherwise a small step (Shift = larger). Keeps focus off canvas scrolling.
@@ -2122,14 +2172,26 @@ function moveBoxLayer(id, direction){
   $('fontScale').addEventListener('change',()=>{ state.fontScale=$('fontScale').value; applyScale(); });
   $('uiScale').addEventListener('change',()=>{ state.uiScale=$('uiScale').value; applyScale(); });
   $('aspectRatio').addEventListener('change',()=>{ state.aspectRatio=$('aspectRatio').value; populateRatios(); });
-  document.querySelectorAll('.helpBtn').forEach(btn=>btn.addEventListener('click',()=>openHelp(btn.dataset.help)));
-  $('closeHelp').addEventListener('click', closeHelp); $('helpOverlay').addEventListener('click',e=>{ if(e.target.id==='helpOverlay') closeHelp(); });
-  let helpSplitDrag=false;
-  $('helpSplitter').addEventListener('pointerdown',e=>{ helpSplitDrag=true; $('helpSplitter').classList.add('dragging'); $('helpSplitter').setPointerCapture?.(e.pointerId); e.preventDefault(); });
-  window.addEventListener('pointermove',e=>{ if(helpSplitDrag) setHelpSplitFromClientY(e.clientY); });
-  window.addEventListener('pointerup',e=>{ if(helpSplitDrag){ helpSplitDrag=false; $('helpSplitter').classList.remove('dragging'); autoSave(); } });
-  window.addEventListener('resize',()=>{ if($('helpOverlay').classList.contains('show')) applyHelpSplit(); });
-  $('addNoteRow').addEventListener('click',()=>{ if(!state.currentHelp) return; ensureNoteRows(state.currentHelp); state.notes[state.currentHelp].push({memo:'',a:'',b:'',c:'',d:''}); renderNotes(); setStatus('leftStatus',t('rowAdded'),'ok'); autoSaveDebounced(); });
+  document.querySelectorAll('.helpBtn').forEach(btn=>btn.addEventListener('click',()=>openSectionBuilder(btn.dataset.help)));
+  $('sbClose').addEventListener('click', closeSectionBuilder);
+  $('sbCancel').addEventListener('click', closeSectionBuilder);
+  $('sectionBuilderOverlay').addEventListener('click',e=>{ if(e.target.id==='sectionBuilderOverlay') closeSectionBuilder(); });
+  $('sbProcess').addEventListener('click', runSectionBuilder);
+  $('sbSave').addEventListener('click', saveSectionBuilder);
+  $('sbResult').addEventListener('input',()=>{ $('sbSave').disabled = !$('sbResult').value.trim(); });
+  $('sbPrompt').addEventListener('keydown',e=>{ if((e.ctrlKey||e.metaKey) && e.key==='Enter'){ e.preventDefault(); runSectionBuilder(); } });
+  (function bindSbRefDrop(){
+    const drop=$('sbRefDrop'), file=$('sbRefFile'), clearBtn=$('sbRefClear');
+    if(drop && file){
+      drop.addEventListener('click',(e)=>{ if(e.target===clearBtn) return; file.click(); });
+      file.addEventListener('change',()=>{ if(file.files && file.files[0]) sbSetRefFromFile(file.files[0]); });
+      ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,(e)=>{ e.preventDefault(); e.stopPropagation(); drop.classList.add('dragover'); }));
+      ['dragleave','dragend','drop'].forEach(ev=>drop.addEventListener(ev,(e)=>{ e.preventDefault(); e.stopPropagation(); drop.classList.remove('dragover'); }));
+      drop.addEventListener('drop',(e)=>{ const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; if(f) sbSetRefFromFile(f); });
+    }
+    if(clearBtn) clearBtn.addEventListener('click',(e)=>{ e.stopPropagation(); sbSetRefImage(null); });
+  })();
+  window.addEventListener('keydown',e=>{ if(e.key==='Escape' && $('sectionBuilderOverlay').classList.contains('show')){ e.preventDefault(); closeSectionBuilder(); } });
 
   setupColorPicker('globalColor','globalColorPicker',()=>{});
   setupColorPicker('elColor','elColorPicker',()=>{});
@@ -2340,6 +2402,7 @@ function moveBoxLayer(id, direction){
       'Output format:',
       '{',
       '  "high_level_description": "",',
+      '  "photographic": true,',
       '  "style_description": {',
       '    "aesthetics": "",',
       '    "lighting": "",',
@@ -2356,9 +2419,10 @@ function moveBoxLayer(id, direction){
       '',
       'FIELD RULES',
       'high_level_description: a concise summary of the complete intended scene; include primary subjects, setting, and overall visual intent.',
+      'photographic: true ONLY when the intended output is an actual photograph / photographic image. false for ANY non-photographic medium (illustration, painting, drawing, 3D render, vector art, graphic design, anime, comic, etc.). The UI uses this to switch between Photo mode and Art / illustration mode and to hide camera fields, so judge it from the user prompt and medium. When false, you MUST set style_description.photo to "".',
       'style_description.aesthetics: overall visual style and treatment.',
       'style_description.lighting: light source, direction, quality, and color characteristics.',
-      'style_description.photo: camera or lens characteristics when relevant; use "" when not photographic.',
+      'style_description.photo: camera or lens characteristics when photographic; MUST be "" when photographic is false.',
       'style_description.medium: medium category (photograph, oil painting, 3D render, vector illustration, etc.).',
       'style_description.color_palette: 3-6 dominant colors as uppercase hex in #RRGGBB format.',
       'compositional_deconstruction.background: describe ONLY the environment, atmosphere, surfaces, architecture, terrain, depth cues, weather, and environmental context. Do not deconstruct individual foreground subjects here.',
@@ -2423,9 +2487,10 @@ function moveBoxLayer(id, direction){
   function vlmSchemaFormat(){
     return { type:'json_schema', json_schema:{ name:'okims_creative_fields', strict:true, schema:{
       type:'object', additionalProperties:false,
-      required:['high_level_description','style_description','compositional_deconstruction'],
+      required:['high_level_description','photographic','style_description','compositional_deconstruction'],
       properties:{
         high_level_description:{ type:'string' },
+        photographic:{ type:'boolean' },
         style_description:{ type:'object', additionalProperties:false,
           required:['aesthetics','lighting','photo','medium','color_palette'],
           properties:{
@@ -2501,6 +2566,7 @@ function moveBoxLayer(id, direction){
   function currentCreativeObject(){
     return {
       high_level_description:$('high').value.trim(),
+      photographic:($('captionType').value==='photo'),
       style_description:{
         aesthetics:$('aesthetics').value.trim(),
         lighting:$('lighting').value.trim(),
@@ -2522,9 +2588,13 @@ function moveBoxLayer(id, direction){
     if(typeof sd.lighting==='string') $('lighting').value=sd.lighting;
     if(typeof sd.medium==='string' && sd.medium.trim()) $('medium').value=sd.medium.trim();
     const photo=(typeof sd.photo==='string'?sd.photo:'').trim();
-    const isPhoto = photo.length>0 || /photo/i.test(sd.medium||'');
+    // The agent owns the Photo/Art switch via an explicit boolean; fall back to
+    // inference only for older responses that don't include it.
+    const isPhoto = (typeof obj.photographic==='boolean')
+      ? obj.photographic
+      : (photo.length>0 || /photo/i.test(sd.medium||''));
     $('captionType').value = isPhoto ? 'photo' : 'art_style';
-    $('styleField').value = photo;
+    $('styleField').value = isPhoto ? photo : '';
     const bg = (typeof comp.background==='string') ? comp.background
              : (typeof obj.background==='string' ? obj.background : null);
     if(bg!=null) $('background').value=bg;
@@ -2611,6 +2681,7 @@ function moveBoxLayer(id, direction){
       'Output a single JSON document and nothing else, in EXACTLY this shape:',
       '{',
       '  "high_level_description": "",',
+      '  "photographic": true,',
       '  "style_description": {',
       '    "aesthetics": "",',
       '    "lighting": "",',
@@ -2622,6 +2693,7 @@ function moveBoxLayer(id, direction){
       '    "background": ""',
       '  }',
       '}',
+      'Keep "photographic" the same as in the current fields unless the instruction clearly changes the medium between photographic and non-photographic.',
       '',
       'All keys are required. Return the FULL object with all fields, both the changed field(s) and every unchanged field copied verbatim from the current fields.',
       'HARD CONSTRAINTS: Output valid JSON only. No markdown. No code fences. No commentary. No extra fields.'
