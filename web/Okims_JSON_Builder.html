@@ -1560,12 +1560,14 @@ function moveBoxLayer(id, direction){
     autoSave();
   }
 
-  function duplicateBoxById(id){
+  function duplicateBoxById(id, offset=true){
     const b=state.boxes.find(x=>x.id===id);
     if(!b) return;
     const nb=JSON.parse(JSON.stringify(b));
     nb.id=state.nextId++;
-    nb.bbox=[b.bbox[0]+25,b.bbox[1]+25,b.bbox[2]+25,b.bbox[3]+25];
+    // offset=false places the copy exactly on the original so it can be dragged
+    // out from under the cursor (used by alt-drag duplicate).
+    nb.bbox=offset ? [b.bbox[0]+25,b.bbox[1]+25,b.bbox[2]+25,b.bbox[3]+25] : [...b.bbox];
     sanitizeBox(nb);
     state.boxes.push(nb);
     state.selected=nb.id;
@@ -2054,7 +2056,7 @@ function moveBoxLayer(id, direction){
     if(!boxEl){ state.selected=null; state.selectedAll=false; renderAll(); e.preventDefault(); return; }
     const p=pointerNorm(e);
     const id=+boxEl.dataset.id;
-    if(e.altKey){ const nb=duplicateBoxById(id); if(nb){ state.selected=nb.id; state.selectedAll=false; state.drag={mode:'move',id:nb.id,start:p,orig:[...nb.bbox]}; } e.preventDefault(); return; }
+    if(e.altKey){ const nb=duplicateBoxById(id,false); if(nb){ state.selected=nb.id; state.selectedAll=false; state.drag={mode:'move',id:nb.id,start:p,orig:[...nb.bbox]}; } e.preventDefault(); return; }
     state.selected=id; state.selectedAll=false; const b=selectedBox(); const handleEl=e.target.closest('.handle'); const mode=handleEl?'resize':'move'; state.drag={mode,id,start:p,orig:[...b.bbox],resizeDir:handleEl ? (handleEl.dataset.resizeDir||'se') : null}; renderAll(); e.preventDefault(); return;
   });
   stage.addEventListener('dblclick', e=>{
@@ -2078,7 +2080,28 @@ function moveBoxLayer(id, direction){
     canvasOuterEl.addEventListener('contextmenu', e=>{ e.preventDefault(); });
   }
   window.addEventListener('resize', updateStageSize);
-  window.addEventListener('keydown', e=>{ if(e.key==='Delete' && (state.selected || state.selectedAll) && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)){ if(state.selectedAll){ state.boxes=[]; state.selectedAll=false; state.selected=null; } else { state.boxes=state.boxes.filter(b=>b.id!==state.selected); state.selected=state.boxes[0]?.id||null; } renderAll(); }});
+  function editingTextField(){ return ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName) || document.activeElement?.isContentEditable; }
+  window.addEventListener('keydown', e=>{ if((e.key==='Delete' || e.key==='Backspace') && (state.selected || state.selectedAll) && !editingTextField()){ if(state.selectedAll){ state.boxes=[]; state.selectedAll=false; state.selected=null; } else { state.boxes=state.boxes.filter(b=>b.id!==state.selected); state.selected=state.boxes[0]?.id||null; } renderAll(); e.preventDefault(); }});
+  // Arrow keys nudge the selected box(es). On the grid snap, move one grid cell;
+  // otherwise a small step (Shift = larger). Keeps focus off canvas scrolling.
+  window.addEventListener('keydown', e=>{
+    if(editingTextField()) return;
+    if(!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) return;
+    if(!state.selected && !state.selectedAll) return;
+    let stepX, stepY;
+    if(state.gridSnapEnabled){
+      const meta=getGridMeta(10);
+      stepX=1000/Math.max(1,meta.cols); stepY=1000/Math.max(1,meta.rows);
+    }else{
+      stepX=stepY=(e.shiftKey?25:5);
+    }
+    let dx=0, dy=0;
+    if(e.key==='ArrowLeft') dx=-stepX; else if(e.key==='ArrowRight') dx=stepX;
+    else if(e.key==='ArrowUp') dy=-stepY; else if(e.key==='ArrowDown') dy=stepY;
+    nudgeBoxes(dx,dy);
+    generateJson(false); autoSaveDebounced();
+    e.preventDefault();
+  });
   window.addEventListener('keydown', e=>{ if(e.code==='Space' && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)){ state.spacePan=true; updatePanCursor(); e.preventDefault(); } });
   window.addEventListener('keyup', e=>{ if(e.code==='Space'){ state.spacePan=false; updatePanCursor(); } });
 
@@ -2145,6 +2168,9 @@ function moveBoxLayer(id, direction){
   $('snapToggle').addEventListener('click',()=>{ state.snapEnabled=!state.snapEnabled; applyCanvasControls(); autoSave(); });
   $('gridSnapToggle').addEventListener('click',()=>{ state.gridSnapEnabled=!state.gridSnapEnabled; applyCanvasControls(); autoSave(); });
   document.querySelector('.canvasOuter')?.addEventListener('wheel',e=>{
+    // Zoom only with Ctrl/Cmd held (or a trackpad/iPad pinch, which sends
+    // ctrlKey). A plain wheel scrolls the page/canvas as normal.
+    if(!e.ctrlKey && !e.metaKey) return;
     const outer=document.querySelector('.canvasOuter'); const ws=workspace||$('stageWorkspace');
     if(!outer || !ws || !outer.contains(e.target)) return;
     e.preventDefault();
