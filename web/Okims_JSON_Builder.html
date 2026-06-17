@@ -218,6 +218,12 @@
   .handle-nw{left:-7px;top:-7px;cursor:nwse-resize}
   .handle-ne{right:-7px;top:-7px;cursor:nesw-resize}
   .handle-sw{left:-7px;bottom:-7px;cursor:nesw-resize}
+  .handle-n,.handle-s{width:18px;height:10px;border-radius:6px}
+  .handle-e,.handle-w{width:10px;height:18px;border-radius:6px}
+  .handle-n{left:50%;top:-6px;transform:translateX(-50%);cursor:ns-resize}
+  .handle-s{left:50%;bottom:-6px;transform:translateX(-50%);cursor:ns-resize}
+  .handle-w{left:-6px;top:50%;transform:translateY(-50%);cursor:ew-resize}
+  .handle-e{right:-6px;top:50%;transform:translateY(-50%);cursor:ew-resize}
   .coord{font-size:12px;color:var(--muted);margin-top:8px;display:flex;gap:12px;flex-wrap:wrap}
   .elementList{display:flex;flex-direction:column;gap:6px;margin-top:8px;max-height:175px;overflow:auto}
   .elemItem{display:grid;grid-template-columns:92px 22px auto minmax(60px,128px) minmax(0,1fr) auto;gap:8px;align-items:center;border:1px solid var(--line);background:color-mix(in srgb, var(--panel) 88%, #000);border-radius:8px;padding:7px;cursor:pointer}
@@ -1422,7 +1428,7 @@
     points.forEach(p=>targets.forEach(tg=>{ const d=tg-p, ad=Math.abs(d); if(ad<dist){ dist=ad; best=d; } }));
     return dist<=threshold ? best : 0;
   }
-  function applyBoxSnap(b, mode){
+  function applyBoxSnap(b, mode, dir){
     if(!state.snapEnabled && !state.gridSnapEnabled) return;
     let [y1,x1,y2,x2]=b.bbox.map(Number);
     const w=x2-x1, h=y2-y1, th=Number(state.snapStrength)||14;
@@ -1431,8 +1437,12 @@
       const dx=bestSnapDelta([x1,x1+w/2,x2], xs, th); if(dx) { x1=clamp(x1+dx,0,1000-w); x2=x1+w; }
       const dy=bestSnapDelta([y1,y1+h/2,y2], ys, th); if(dy) { y1=clamp(y1+dy,0,1000-h); y2=y1+h; }
     }else if(mode==='resize'){
-      const dx=bestSnapDelta([x2], xs, th); if(dx) x2=clamp(x2+dx,x1+5,1000);
-      const dy=bestSnapDelta([y2], ys, th); if(dy) y2=clamp(y2+dy,y1+5,1000);
+      // Only snap the edge(s) actually being dragged.
+      const d=dir||'se';
+      if(d.includes('e')){ const dx=bestSnapDelta([x2], xs, th); if(dx) x2=clamp(x2+dx,x1+5,1000); }
+      if(d.includes('w')){ const dx=bestSnapDelta([x1], xs, th); if(dx) x1=clamp(x1+dx,0,x2-5); }
+      if(d.includes('s')){ const dy=bestSnapDelta([y2], ys, th); if(dy) y2=clamp(y2+dy,y1+5,1000); }
+      if(d.includes('n')){ const dy=bestSnapDelta([y1], ys, th); if(dy) y1=clamp(y1+dy,0,y2-5); }
     }
     b.bbox=[y1,x1,y2,x2];
   }
@@ -1740,7 +1750,8 @@ function moveBoxLayer(id, direction){
       const div=document.createElement('div'); div.className='box'+((state.selectedAll || b.id===state.selected)?' selected':''); div.dataset.id=b.id; div.style.setProperty('--box', b.color||'#7AA2FF'); Object.assign(div.style, boxToCss(b));
       const tag=document.createElement('div'); tag.className='tag'; tag.textContent=(b.name||('box '+b.id)).trim(); tag.title='Double-click to rename';
       div.appendChild(tag);
-      ['nw','ne','sw','se'].forEach(dir=>{ const h=document.createElement('div'); h.className='handle handle-'+dir; h.dataset.resizeDir=dir; div.appendChild(h); });
+      const handleDirs=(state.selectedAll || b.id===state.selected) ? ['nw','ne','sw','se','n','s','e','w'] : ['nw','ne','sw','se'];
+      handleDirs.forEach(dir=>{ const h=document.createElement('div'); h.className='handle handle-'+dir; h.dataset.resizeDir=dir; div.appendChild(h); });
       if(state.selectedAll || b.id===state.selected){
         const ants=document.createElement('div'); ants.className='marchingAnts';
         ['antTop','antRight','antBottom','antLeft'].forEach(cls=>{ const line=document.createElement('div'); line.className='antLine '+cls; ants.appendChild(line); });
@@ -2064,7 +2075,7 @@ function moveBoxLayer(id, direction){
     state.selected=id; state.selectedAll=false;
     startTagEdit(boxEl, b); e.preventDefault();
   });
-  window.addEventListener('mousemove', e=>{ if(updateLayoutDrag(e)) return; if(!state.drag) return; const b=selectedBox(); if(!b||b.id!==state.drag.id) return; const p=pointerNorm(e), d=state.drag; if(d.mode==='create') b.bbox=[d.start.y,d.start.x,p.y,p.x]; if(d.mode==='move'){ const dx=p.x-d.start.x, dy=p.y-d.start.y; let [y1,x1,y2,x2]=d.orig; const w=x2-x1,h=y2-y1; x1=clamp(x1+dx,0,1000-w); y1=clamp(y1+dy,0,1000-h); b.bbox=[y1,x1,y1+h,x1+w]; applyBoxSnap(b,'move'); } if(d.mode==='resize'){ let [y1,x1,y2,x2]=d.orig; const dir=d.resizeDir||'se'; if(dir.includes('n')) y1=p.y; if(dir.includes('s')) y2=p.y; if(dir.includes('w')) x1=p.x; if(dir.includes('e')) x2=p.x; b.bbox=[y1,x1,y2,x2]; applyBoxSnap(b,'resize'); } sanitizeBox(b); renderBoxes(); renderSelection(); generateJson(false); autoSaveDebounced(); });
+  window.addEventListener('mousemove', e=>{ if(updateLayoutDrag(e)) return; if(!state.drag) return; const b=selectedBox(); if(!b||b.id!==state.drag.id) return; const p=pointerNorm(e), d=state.drag; if(d.mode==='create') b.bbox=[d.start.y,d.start.x,p.y,p.x]; if(d.mode==='move'){ const dx=p.x-d.start.x, dy=p.y-d.start.y; let [y1,x1,y2,x2]=d.orig; const w=x2-x1,h=y2-y1; x1=clamp(x1+dx,0,1000-w); y1=clamp(y1+dy,0,1000-h); b.bbox=[y1,x1,y1+h,x1+w]; applyBoxSnap(b,'move'); } if(d.mode==='resize'){ let [y1,x1,y2,x2]=d.orig; const dir=d.resizeDir||'se'; if(dir.includes('n')) y1=p.y; if(dir.includes('s')) y2=p.y; if(dir.includes('w')) x1=p.x; if(dir.includes('e')) x2=p.x; b.bbox=[y1,x1,y2,x2]; applyBoxSnap(b,'resize',dir); } sanitizeBox(b); renderBoxes(); renderSelection(); generateJson(false); autoSaveDebounced(); });
   window.addEventListener('mousemove', e=>{ if(state.panDrag){ const outer=document.querySelector('.canvasOuter'); if(outer){ outer.scrollLeft=state.panDrag.left-(e.clientX-state.panDrag.x); outer.scrollTop=state.panDrag.top-(e.clientY-state.panDrag.y); } e.preventDefault(); }});
   window.addEventListener('mouseup',()=>{ const outer=document.querySelector('.canvasOuter'); if(state.panDrag && outer) outer.classList.remove('panning'); state.panDrag=null; endLayoutDrag(); if(state.drag){ state.drag=null; renderAll(); }});
   const canvasOuterEl=document.querySelector('.canvasOuter');
