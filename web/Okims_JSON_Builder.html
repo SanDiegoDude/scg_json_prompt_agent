@@ -140,8 +140,10 @@
   @keyframes helpAntSpin{to{transform:rotate(360deg)}}
   .helpBtn.locked{cursor:not-allowed;opacity:.6}
   .helpBtn.locked::before{display:none}
-  .lockBtn{width:22px;height:22px;border-radius:50%;padding:0;display:inline-flex;align-items:center;justify-content:center;font-size:11px;background:transparent;border:0;color:var(--text);cursor:pointer;flex:0 0 auto;opacity:.38;filter:grayscale(1);transition:opacity .15s,filter .15s,text-shadow .15s}
+  .lockBtn{width:22px;height:22px;border-radius:50%;padding:0;display:inline-flex;align-items:center;justify-content:center;font-size:11px;background:transparent;border:0;color:var(--text);cursor:pointer;flex:0 0 auto;margin-left:auto;position:relative;opacity:.38;filter:grayscale(1);transition:opacity .15s,filter .15s,text-shadow .15s}
+  .lockBtn::before{content:"";position:absolute;inset:0;border-radius:50%;padding:2px;background:repeating-conic-gradient(from 0deg,#ff4d4d 0deg 18deg,transparent 18deg 36deg);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:0;pointer-events:none;filter:drop-shadow(0 0 2px #ff4d4d);transition:opacity .15s}
   .lockBtn:hover{opacity:.7;filter:grayscale(.4)}
+  .lockBtn:hover::before{opacity:.9}
   .lockBtn.active{opacity:1;filter:none;text-shadow:0 0 6px color-mix(in srgb,var(--accent) 80%,transparent)}
   input.fieldLocked,textarea.fieldLocked{border-color:color-mix(in srgb,var(--accent) 55%,var(--line));background:color-mix(in srgb,var(--accent) 7%,var(--field));opacity:.9;cursor:not-allowed}
   input,select,textarea,button{font:inherit}
@@ -578,22 +580,22 @@
 
     <div class="row captionMediumRow">
       <div><label class="labelLine"><span data-i18n="captionType">Caption Type</span></label><select id="captionType"><option value="photo" data-i18n="photoCaption">Photo</option><option value="art_style" data-i18n="artCaption">Art / illustration</option></select></div>
-      <div><label class="labelLine"><span data-i18n="medium">Medium</span><button class="helpBtn" data-help="medium" type="button">🔨</button><button class="lockBtn" data-lock="medium" type="button" title="Lock this field (blocks AI edits, survives Clear/Reset)">🔒</button></label><input id="medium" type="text" value="photograph" data-placeholder="mediumPh" placeholder="photograph / illustration / graphic_design"></div>
+      <div><label class="labelLine"><span data-i18n="medium">Medium</span><button class="lockBtn" data-lock="medium" type="button" title="Lock this field (blocks AI edits, survives Clear/Reset)">🔒</button><button class="helpBtn" data-help="medium" type="button">🔨</button></label><input id="medium" type="text" value="photograph" data-placeholder="mediumPh" placeholder="photograph / illustration / graphic_design"></div>
     </div>
 
-    <label class="labelLine"><span data-i18n="subject">Subject / High Level Description</span><button class="helpBtn" data-help="subject" type="button">🔨</button><button class="lockBtn" data-lock="subject" type="button" title="Lock this field (blocks AI edits, survives Clear/Reset)">🔒</button></label>
+    <label class="labelLine"><span data-i18n="subject">Subject / High Level Description</span><button class="lockBtn" data-lock="subject" type="button" title="Lock this field (blocks AI edits, survives Clear/Reset)">🔒</button><button class="helpBtn" data-help="subject" type="button">🔨</button></label>
     <textarea id="high" data-placeholder="subjectPh" placeholder="Summarize the whole image and visible subject in 1-2 sentences"></textarea>
 
-    <label class="labelLine"><span data-i18n="style">Style / Aesthetics</span><button class="helpBtn" data-help="style" type="button">🔨</button><button class="lockBtn" data-lock="style" type="button" title="Lock this field (blocks AI edits, survives Clear/Reset)">🔒</button></label>
+    <label class="labelLine"><span data-i18n="style">Style / Aesthetics</span><button class="lockBtn" data-lock="style" type="button" title="Lock this field (blocks AI edits, survives Clear/Reset)">🔒</button><button class="helpBtn" data-help="style" type="button">🔨</button></label>
     <textarea id="aesthetics" data-placeholder="stylePh" placeholder="documentary, cinematic, fashion editorial ..."></textarea>
 
-    <label class="labelLine"><span data-i18n="lighting">Lighting</span><button class="helpBtn" data-help="lighting" type="button">🔨</button><button class="lockBtn" data-lock="lighting" type="button" title="Lock this field (blocks AI edits, survives Clear/Reset)">🔒</button></label>
+    <label class="labelLine"><span data-i18n="lighting">Lighting</span><button class="lockBtn" data-lock="lighting" type="button" title="Lock this field (blocks AI edits, survives Clear/Reset)">🔒</button><button class="helpBtn" data-help="lighting" type="button">🔨</button></label>
     <textarea id="lighting" data-placeholder="lightingPh" placeholder="soft daylight, harsh flash, fluorescent light ..."></textarea>
 
-    <label id="styleLabel" class="labelLine"><span data-i18n="camera">Camera / Photo</span><button class="helpBtn" data-help="camera" type="button">🔨</button><button class="lockBtn" data-lock="camera" type="button" title="Lock this field (blocks AI edits, survives Clear/Reset)">🔒</button></label>
+    <label id="styleLabel" class="labelLine"><span data-i18n="camera">Camera / Photo</span><button class="lockBtn" data-lock="camera" type="button" title="Lock this field (blocks AI edits, survives Clear/Reset)">🔒</button><button class="helpBtn" data-help="camera" type="button">🔨</button></label>
     <textarea id="styleField" data-placeholder="cameraPh" placeholder="35mm lens, handheld, eye-level, close-up ..."></textarea>
 
-    <label class="labelLine"><span data-i18n="background">Background</span><button class="helpBtn" data-help="background" type="button">🔨</button><button class="lockBtn" data-lock="background" type="button" title="Lock this field (blocks AI edits, survives Clear/Reset)">🔒</button></label>
+    <label class="labelLine"><span data-i18n="background">Background</span><button class="lockBtn" data-lock="background" type="button" title="Lock this field (blocks AI edits, survives Clear/Reset)">🔒</button><button class="helpBtn" data-help="background" type="button">🔨</button></label>
     <textarea id="background" data-placeholder="backgroundPh" placeholder="Describe the background/environment. Goes into compositional_deconstruction.background."></textarea>
 
     <div class="globalColorSection" style="display:none" aria-hidden="true">
