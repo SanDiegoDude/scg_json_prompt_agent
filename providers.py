@@ -203,6 +203,89 @@ def build_request_body(cfg, payload):
     return body
 
 
+def chat_completion(provider_id, messages, temperature=0.7, max_tokens=8192,
+                    response_format=None, timeout=300):
+    """Synchronous chat completion used by ComfyUI nodes (off the event loop).
+
+    Mirrors the proxy route's request building/auth but blocks via urllib so it
+    can run inside a node's worker thread. Returns the assistant message text;
+    raises ``RuntimeError`` with a readable message on any failure.
+    """
+    import urllib.request
+    import urllib.error
+
+    providers = load_providers()
+    cfg = providers.get(provider_id)
+    if not cfg:
+        raise RuntimeError(
+            "Unknown AI provider '%s'. Add it to .env (AI_PROVIDER_%s = ...)."
+            % (provider_id, provider_id)
+        )
+
+    payload = {"messages": messages, "temperature": temperature,
+               "max_tokens": max_tokens}
+    if response_format:
+        payload["response_format"] = response_format
+    body = build_request_body(cfg, payload)
+    headers = {"Content-Type": "application/json"}
+
+    if is_vertex(cfg["base_url"]):
+        url = vertex_chat_url(cfg["base_url"])
+        try:
+            token = vertex_access_token(cfg["api_key"] or "")
+        except Exception as exc:
+            raise RuntimeError(
+                "Vertex auth failed: %s. Run `gcloud auth application-default "
+                "login` or point the 4th .env field at a service-account JSON."
+                % exc
+            )
+        headers["Authorization"] = "Bearer " + token
+    else:
+        url = _chat_completions_url(cfg["base_url"])
+        if cfg["api_key"]:
+            headers["Authorization"] = "Bearer " + cfg["api_key"]
+
+    data = json.dumps(body).encode("utf-8")
+    req = urllib.request.Request(url, data=data, headers=headers, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            text = resp.read().decode("utf-8", "replace")
+    except urllib.error.HTTPError as exc:
+        detail = ""
+        try:
+            detail = exc.read().decode("utf-8", "replace")
+        except Exception:
+            pass
+        raise RuntimeError("Upstream HTTP %s: %s" % (exc.code, detail[:400]))
+    except Exception as exc:
+        raise RuntimeError("Upstream request failed: %s" % exc)
+
+    try:
+        parsed = json.loads(text)
+    except ValueError:
+        raise RuntimeError("Upstream returned non-JSON: %s" % text[:300])
+
+    if isinstance(parsed, dict) and parsed.get("error"):
+        err = parsed["error"]
+        msg = err if isinstance(err, str) else err.get("message", "upstream error")
+        raise RuntimeError(str(msg))
+
+    try:
+        content = parsed["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError):
+        raise RuntimeError("Upstream response had no choices/message content.")
+
+    if isinstance(content, list):
+        parts = []
+        for p in content:
+            if isinstance(p, str):
+                parts.append(p)
+            elif isinstance(p, dict):
+                parts.append(p.get("text", ""))
+        content = "".join(parts)
+    return content or ""
+
+
 def register_routes():
     """Register the provider + proxy routes on the ComfyUI server."""
     try:
