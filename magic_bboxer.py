@@ -518,7 +518,11 @@ class SCG_Magic_JSON_BBoxer:
                 y2 = min(1000, y1 + 1)
             if x2 - x1 < 1:
                 x2 = min(1000, x1 + 1)
-            el = {"type": btype, "bbox": [y1, x1, y2, x2]}
+            el = {"type": btype}
+            label = _label_no_space(it.get("label", it.get("name", "")))
+            if label:
+                el["label"] = label
+            el["bbox"] = [y1, x1, y2, x2]
             if btype == "text":
                 el["text"] = str(it.get("text", "") or "")
             el["desc"] = str(it.get("description", it.get("desc", "")) or "")

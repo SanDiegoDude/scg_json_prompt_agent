@@ -196,6 +196,9 @@
   .impactGuides .gridLine.v.impact{width:2px;transform:translateX(-1px)}
   .impactGuides .gridLine.h.impact{height:2px;transform:translateY(-1px)}
   .box{position:absolute;border:2px solid var(--box);background:color-mix(in srgb, var(--box) 18%, transparent);min-width:8px;min-height:8px;cursor:move;z-index:2}
+  /* Locked boxes drop into the background: click-through, dimmed, dashed, below live boxes. */
+  .box.locked{pointer-events:none;cursor:default;border-style:dashed;opacity:.42;z-index:1;box-shadow:none}
+  .box.locked .tag{opacity:.6}
   .box.selected{box-shadow:0 0 0 2px color-mix(in srgb, var(--box) 55%, transparent)}
   .box.selected::after{content:"";position:absolute;inset:-6px;pointer-events:none;border-radius:7px;opacity:.96;filter:drop-shadow(0 0 2px color-mix(in srgb, var(--box) 55%, transparent));background:
     repeating-linear-gradient(90deg,var(--ant-color) 0 8px,transparent 8px 16px) left top/200% 2px repeat-x,
@@ -234,7 +237,7 @@
   .handle-e{right:-6px;top:50%;transform:translateY(-50%);cursor:ew-resize}
   .coord{font-size:12px;color:var(--muted);margin-top:8px;display:flex;gap:12px;flex-wrap:wrap}
   .elementList{display:flex;flex-direction:column;gap:6px;margin-top:8px;max-height:175px;overflow:auto}
-  .elemItem{display:grid;grid-template-columns:92px 22px auto minmax(60px,128px) minmax(0,1fr) auto;gap:8px;align-items:center;border:1px solid var(--line);background:color-mix(in srgb, var(--panel) 88%, #000);border-radius:8px;padding:7px;cursor:pointer}
+  .elemItem{display:grid;grid-template-columns:auto 22px auto minmax(60px,128px) minmax(0,1fr) auto;gap:8px;align-items:center;border:1px solid var(--line);background:color-mix(in srgb, var(--panel) 88%, #000);border-radius:8px;padding:7px;cursor:pointer}
   .elemItem.active{border-color:var(--accent);background:color-mix(in srgb, var(--accent) 12%, var(--panel))}
   .typePill{cursor:pointer;user-select:none;position:relative}
   .typePill::after{content:"⌄";margin-left:4px;opacity:.55;font-size:10px}
@@ -251,6 +254,7 @@
   .layerBtn{width:20px;height:22px;min-width:20px;padding:0;border-radius:6px;font-size:10px;font-weight:900;line-height:1;background:color-mix(in srgb, var(--panel2) 75%, transparent);border:1px solid var(--line);color:var(--muted)}
   .layerBtn:hover:not(:disabled){border-color:var(--accent);color:var(--text);background:color-mix(in srgb, var(--accent) 14%, var(--panel2))}
   .layerBtn:disabled{opacity:.28;cursor:not-allowed}
+  .boxLockBtn.active{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb, var(--accent) 18%, var(--panel2))}
   .elemColorDot{width:12px;height:12px;border-radius:999px;border:1px solid rgba(255,255,255,.55);box-shadow:0 0 0 1px rgba(0,0,0,.22);justify-self:center;align-self:center;display:inline-block}
   .pill{font-size:11px;border:1px solid var(--line);border-radius:999px;padding:3px 7px;color:var(--text);background:var(--field);text-align:center}
   .itemText{font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1468,7 +1472,7 @@
     x1=clamp(x1+dx,0,1000-w); y1=clamp(y1+dy,0,1000-h); b.bbox=[round(y1),round(x1),round(y1+h),round(x1+w)]; sanitizeBox(b);
   }
   function nudgeBoxes(dx,dy){
-    const targets=state.selectedAll ? state.boxes : (selectedBox() ? [selectedBox()] : []);
+    const targets=(state.selectedAll ? state.boxes : (selectedBox() ? [selectedBox()] : [])).filter(b=>!b.locked);
     if(!targets.length) return;
     targets.forEach(b=>moveBBoxBy(b,dx,dy));
     renderAll();
@@ -1590,6 +1594,7 @@ function moveBoxLayer(id, direction){
     if(!b) return;
     const nb=JSON.parse(JSON.stringify(b));
     nb.id=state.nextId++;
+    nb.locked=false;  // a fresh copy should always be editable, never click-through
     // offset=false places the copy exactly on the original so it can be dragged
     // out from under the cursor (used by alt-drag duplicate).
     nb.bbox=offset ? [b.bbox[0]+25,b.bbox[1]+25,b.bbox[2]+25,b.bbox[3]+25] : [...b.bbox];
@@ -1764,15 +1769,19 @@ function moveBoxLayer(id, direction){
   function renderBoxes(){
     stage.querySelectorAll('.box').forEach(n=>n.remove());
     for(const b of state.boxes){
-      const div=document.createElement('div'); div.className='box'+((state.selectedAll || b.id===state.selected)?' selected':''); div.dataset.id=b.id; div.style.setProperty('--box', b.color||'#7AA2FF'); Object.assign(div.style, boxToCss(b));
+      const locked=!!b.locked;
+      const sel=(state.selectedAll || b.id===state.selected) && !locked;
+      const div=document.createElement('div'); div.className='box'+(sel?' selected':'')+(locked?' locked':''); div.dataset.id=b.id; div.style.setProperty('--box', b.color||'#7AA2FF'); Object.assign(div.style, boxToCss(b));
       const tag=document.createElement('div'); tag.className='tag'; tag.textContent=(b.name||('box '+b.id)).trim(); tag.title='Double-click to rename';
       div.appendChild(tag);
-      const handleDirs=(state.selectedAll || b.id===state.selected) ? ['nw','ne','sw','se','n','s','e','w'] : ['nw','ne','sw','se'];
-      handleDirs.forEach(dir=>{ const h=document.createElement('div'); h.className='handle handle-'+dir; h.dataset.resizeDir=dir; div.appendChild(h); });
-      if(state.selectedAll || b.id===state.selected){
-        const ants=document.createElement('div'); ants.className='marchingAnts';
-        ['antTop','antRight','antBottom','antLeft'].forEach(cls=>{ const line=document.createElement('div'); line.className='antLine '+cls; ants.appendChild(line); });
-        div.appendChild(ants);
+      if(!locked){
+        const handleDirs=sel ? ['nw','ne','sw','se','n','s','e','w'] : ['nw','ne','sw','se'];
+        handleDirs.forEach(dir=>{ const h=document.createElement('div'); h.className='handle handle-'+dir; h.dataset.resizeDir=dir; div.appendChild(h); });
+        if(sel){
+          const ants=document.createElement('div'); ants.className='marchingAnts';
+          ['antTop','antRight','antBottom','antLeft'].forEach(cls=>{ const line=document.createElement('div'); line.className='antLine '+cls; ants.appendChild(line); });
+          div.appendChild(ants);
+        }
       }
       stage.appendChild(div);
     }
@@ -1809,7 +1818,7 @@ function moveBoxLayer(id, direction){
     for(const b of boxesForList){
       const idx=state.boxes.findIndex(x=>x.id===b.id);
       const item=document.createElement('div'); item.className='elemItem'+((state.selectedAll || b.id===state.selected)?' active':'');
-      item.innerHTML=`<span class="layerControls"><button class="layerBtn" data-layer="top" type="button" title="Bring to front">⤒</button><button class="layerBtn" data-layer="up" type="button" title="Bring forward">▲</button><button class="layerBtn" data-layer="down" type="button" title="Send backward">▼</button><button class="layerBtn" data-layer="bottom" type="button" title="Send to back">⤓</button></span><button class="elemColorDotBtn" type="button" title="Change box color"><span class="elemColorDot"></span></button><span class="pill typePill" title="Click to switch obj / text"></span><span class="elemLabel" title="Double-click to rename"></span><span class="elemDesc" title="Double-click to edit description"></span><span class="rowActionGroup"><button class="small rowCopyBtn" type="button"></button><button class="small rowDeleteBtn" type="button"></button></span>`;
+      item.innerHTML=`<span class="layerControls"><button class="layerBtn" data-layer="top" type="button" title="Bring to front">⤒</button><button class="layerBtn" data-layer="up" type="button" title="Bring forward">▲</button><button class="layerBtn" data-layer="down" type="button" title="Send backward">▼</button><button class="layerBtn" data-layer="bottom" type="button" title="Send to back">⤓</button><button class="layerBtn boxLockBtn" data-act="boxlock" type="button"></button></span><button class="elemColorDotBtn" type="button" title="Change box color"><span class="elemColorDot"></span></button><span class="pill typePill" title="Click to switch obj / text"></span><span class="elemLabel" title="Double-click to rename"></span><span class="elemDesc" title="Double-click to edit description"></span><span class="rowActionGroup"><button class="small rowCopyBtn" type="button"></button><button class="small rowDeleteBtn" type="button"></button></span>`;
       const top=item.querySelector('[data-layer="top"]');
       const up=item.querySelector('[data-layer="up"]');
       const down=item.querySelector('[data-layer="down"]');
@@ -1820,6 +1829,11 @@ function moveBoxLayer(id, direction){
       up.addEventListener('click',(e)=>{ e.stopPropagation(); moveBoxLayer(b.id,'up'); });
       down.addEventListener('click',(e)=>{ e.stopPropagation(); moveBoxLayer(b.id,'down'); });
       bottom.addEventListener('click',(e)=>{ e.stopPropagation(); moveBoxLayer(b.id,'bottom'); });
+      const boxLock=item.querySelector('.boxLockBtn');
+      boxLock.textContent = b.locked ? '🔒' : '🔓';
+      boxLock.classList.toggle('active', !!b.locked);
+      boxLock.title = b.locked ? 'Unlock — make this box editable again' : 'Lock in place — box becomes a click-through background element';
+      boxLock.addEventListener('click',(e)=>{ e.stopPropagation(); b.locked=!b.locked; if(b.locked && state.selected===b.id){ state.selected=null; } renderAll(); autoSaveDebounced(); });
       const dot=item.querySelector('.elemColorDot');
       const colorBtn=item.querySelector('.elemColorDotBtn');
       const currentColor=normHex(b.color)||'#7AA2FF';
@@ -1869,7 +1883,7 @@ function moveBoxLayer(id, direction){
     if(type==='photo'){ style.photo=$('styleField').value.trim(); style.medium=$('medium').value.trim()||'photograph'; }
     else { style.medium=$('medium').value.trim()||'illustration'; }
     if(state.globalPalette.length) style.color_palette=[...state.globalPalette]; cap.style_description=style;
-    const comp={}; comp.background=$('background').value.trim(); comp.elements=state.boxes.map(b=>{ const e={}; e.type=b.type; e.bbox=[...b.bbox]; if(b.type==='text') e.text=b.text||''; e.desc=b.desc||''; if(b.palette&&b.palette.length) e.color_palette=[...b.palette]; return e; }); cap.compositional_deconstruction=comp;
+    const comp={}; comp.background=$('background').value.trim(); comp.elements=state.boxes.map(b=>{ const e={}; e.type=b.type; if(b.name) e.label=b.name; e.bbox=[...b.bbox]; if(b.type==='text') e.text=b.text||''; e.desc=b.desc||''; if(b.palette&&b.palette.length) e.color_palette=[...b.palette]; return e; }); cap.compositional_deconstruction=comp;
     cap.render=computeRenderDims();
     return cap;
   }
@@ -2111,7 +2125,7 @@ function moveBoxLayer(id, direction){
   function loadObj(obj){
     $('high').value=obj.high_level_description||''; const style=obj.style_description||{}; $('captionType').value = style.photo!==undefined ? 'photo' : 'art_style'; updateStyleLabel(); $('aesthetics').value=style.aesthetics||''; $('lighting').value=style.lighting||''; $('medium').value=style.medium||''; $('styleField').value = style.photo!==undefined ? (style.photo||'') : (style.art_style||''); state.globalPalette=Array.isArray(style.color_palette)?style.color_palette.map(normHex).filter(Boolean).slice(0,16):[];
     const comp=obj.compositional_deconstruction||{}; $('background').value=comp.background||''; state.boxes=[]; state.selected=null; state.selectedAll=false; state.nextId=1; const arr=Array.isArray(comp.elements)?comp.elements:[];
-    for(const el of arr){ const id=state.nextId++; const b={id,type:el.type==='text'?'text':'obj',name:'',text:el.text||'',desc:el.desc||'',bbox:Array.isArray(el.bbox)?el.bbox:[250,250,750,750],color:'#7AA2FF',palette:Array.isArray(el.color_palette)?el.color_palette.map(normHex).filter(Boolean).slice(0,5):[]}; sanitizeBox(b); state.boxes.push(b); }
+    for(const el of arr){ const id=state.nextId++; const b={id,type:el.type==='text'?'text':'obj',name:labelNoSpace(el.label||el.name||''),text:el.text||'',desc:el.desc||'',bbox:Array.isArray(el.bbox)?el.bbox:[250,250,750,750],color:'#7AA2FF',palette:Array.isArray(el.color_palette)?el.color_palette.map(normHex).filter(Boolean).slice(0,5):[]}; sanitizeBox(b); state.boxes.push(b); }
     state.selected=state.boxes[0]?.id||null; renderAll(); autoSave();
   }
   function loadJsonFromTextarea(){ try{ const obj=JSON.parse($('jsonOut').value); loadObj(obj); setStatus('rightStatus',t('jsonLoaded'),'ok'); } catch(e){ setStatus('rightStatus',`${t('jsonFail')}: ${e.message}`,'err'); } }
@@ -2197,7 +2211,7 @@ function moveBoxLayer(id, direction){
   }
   window.addEventListener('resize', updateStageSize);
   function editingTextField(){ if($('sectionBuilderOverlay')?.classList.contains('show')) return true; return ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName) || document.activeElement?.isContentEditable; }
-  window.addEventListener('keydown', e=>{ if((e.key==='Delete' || e.key==='Backspace') && (state.selected || state.selectedAll) && !editingTextField()){ if(state.selectedAll){ state.boxes=[]; state.selectedAll=false; state.selected=null; } else { state.boxes=state.boxes.filter(b=>b.id!==state.selected); state.selected=state.boxes[0]?.id||null; } renderAll(); e.preventDefault(); }});
+  window.addEventListener('keydown', e=>{ if((e.key==='Delete' || e.key==='Backspace') && (state.selected || state.selectedAll) && !editingTextField()){ if(state.selectedAll){ state.boxes=state.boxes.filter(b=>b.locked); state.selectedAll=false; state.selected=null; } else { const sb=state.boxes.find(b=>b.id===state.selected); if(sb && sb.locked) return; state.boxes=state.boxes.filter(b=>b.id!==state.selected); state.selected=state.boxes[0]?.id||null; } renderAll(); e.preventDefault(); }});
   // Arrow keys nudge the selected box(es). On the grid snap, move one grid cell;
   // otherwise a small step (Shift = larger). Keeps focus off canvas scrolling.
   window.addEventListener('keydown', e=>{
