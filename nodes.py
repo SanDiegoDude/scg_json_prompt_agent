@@ -72,3 +72,12 @@ NODE_CLASS_MAPPINGS = {
 NODE_DISPLAY_NAME_MAPPINGS = {
     "Okims_JSON_Builder": "SCG Ideogram4 Prompt Agent",
 }
+
+# Headless agentic node (text + optional image -> JSON / width / height).
+try:
+    from .magic_bboxer import SCG_Magic_JSON_BBoxer
+
+    NODE_CLASS_MAPPINGS["SCG_Magic_JSON_BBoxer"] = SCG_Magic_JSON_BBoxer
+    NODE_DISPLAY_NAME_MAPPINGS["SCG_Magic_JSON_BBoxer"] = "SCG Magic JSON BBoxer"
+except Exception:
+    pass

@@ -37,6 +37,35 @@ JSON schemas, under the **Agent Configuration** panel.
 | `width` | INT | Computed from the megapixel / divisible-by selector. |
 | `height` | INT | Computed from the megapixel / divisible-by selector. |
 
+## SCG Magic JSON BBoxer (headless node)
+
+A second node, **SCG Magic JSON BBoxer** (also under `SCG/Ideogram`), runs the
+same agent chain as the visual builder but entirely server-side — no HTML
+overlay. Give it a prompt (and optionally a reference image) and it processes
+the whole pipeline and returns the finished prompt like any normal node:
+
+1. **Global creative fields** — turns your prompt / image into style, lighting,
+   medium, background, etc.
+2. **Scene summary** — condenses those into one paragraph of context.
+3. **BBox layout** — composes the scene into bounding-box `elements` on the
+   normalized 0–1000 canvas.
+
+It emits the same Ideogram JSON shape as the builder.
+
+| Input | Notes |
+| --- | --- |
+| `prompt` | STRING — drives the whole chain (creative fields + layout). |
+| `image` | IMAGE (optional) — reference for style and box placement; boxes still conform to the canvas, not the image frame. |
+| `provider` | The AI provider to use (from your `.env`). |
+| `bypass` | When **True**, skips every agent call and passes `prompt` straight through to `json_prompt` (no creative/summary/bbox processing). `width`/`height` are still computed from `aspect_ratio`/`megapixels`. Handy for feeding a hand-written JSON prompt through the same wiring. |
+| `aspect_ratio`, `megapixels` | Control the output canvas / `width`·`height`. |
+| `temperature`, `max_tokens` | Passed to the provider. |
+| `max_boxes` | Cap on how many layout boxes the agent may place. |
+| `seed` | **Does nothing to the output.** The chain has no seedable RNG; this field exists only so ComfyUI can cache the node. Set `control_after_generate` to **fixed** to lock the result and skip re-running the agents on subsequent queue runs (Comfy reuses the cached output); randomize/increment to force a fresh pass. |
+
+Outputs are the same as the builder node: `json_prompt`, `width`, `height`.
+JSON-schema enforcement and the divisible-by value (8) are fixed defaults here.
+
 ## Installation
 
 ```bash
@@ -170,8 +199,11 @@ Other providers use the standard `max_tokens` + `temperature`.
 
 ## How it works
 
-- `nodes.py` — the ComfyUI node; outputs the cleaned JSON plus `width`/`height`.
-- `providers.py` — parses `.env` and registers two routes:
+- `nodes.py` — the ComfyUI nodes; outputs the cleaned JSON plus `width`/`height`.
+- `magic_bboxer.py` — the headless **SCG Magic JSON BBoxer** node (runs the full
+  global → summary → bbox agent chain server-side).
+- `providers.py` — parses `.env`, registers two routes, and exposes a synchronous
+  `chat_completion()` helper used by the headless node:
   - `GET /scg_prompt_agent/providers` — provider list (no secrets).
   - `POST /scg_prompt_agent/chat` — server-side proxy to the selected provider.
 - `web/` — the builder UI (loaded in an iframe over the ComfyUI canvas).
