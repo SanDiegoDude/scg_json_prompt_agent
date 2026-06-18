@@ -196,6 +196,18 @@ BBOX_SCHEMA = {
 }
 
 
+def _check_interrupt():
+    """Honor ComfyUI's global interrupt at a natural break-point.
+
+    Raises the standard interrupt exception so the queue cancels cleanly. A
+    no-op outside a ComfyUI runtime (e.g. unit tests)."""
+    try:
+        import comfy.model_management as mm
+        mm.throw_exception_if_processing_interrupted()
+    except ImportError:
+        pass
+
+
 def _clamp(v, lo, hi):
     return max(lo, min(hi, v))
 
@@ -405,6 +417,7 @@ class SCG_Magic_JSON_BBoxer:
             )
 
         # 1) Global creative fields.
+        _check_interrupt()
         global_user = [{"type": "text", "text": prompt or
                         "No text prompt provided. Analyze the reference image "
                         "and produce the JSON."}]
@@ -418,6 +431,7 @@ class SCG_Magic_JSON_BBoxer:
             raise RuntimeError("global agent did not return a JSON object")
 
         # 2) Summarize the global settings into one paragraph.
+        _check_interrupt()  # bail before stage 2 if the user hit interrupt
         summary_payload = {
             "high_level_description": creative.get("high_level_description", ""),
             "photographic": bool(creative.get("photographic", True)),
@@ -436,6 +450,7 @@ class SCG_Magic_JSON_BBoxer:
             summary = summary.strip("`").strip()
 
         # 3) BBox layout.
+        _check_interrupt()  # bail before stage 3 if the user hit interrupt
         layout_text = (
             "CANVAS: %d x %d px (aspect %s). " % (dims["width"], dims["height"],
                                                   dims["aspect_ratio"])
