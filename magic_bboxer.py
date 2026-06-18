@@ -333,6 +333,13 @@ class SCG_Magic_JSON_BBoxer:
                 "max_tokens": ("INT", {"default": 8192, "min": 64,
                                        "max": 32768, "step": 64}),
                 "max_boxes": ("INT", {"default": 10, "min": 1, "max": 50}),
+                # The agentic chain has no seedable RNG, so this seed does NOT
+                # change the output. It exists purely so ComfyUI can cache/lock
+                # the node: set "fixed" to reuse last round's result (no re-run),
+                # or randomize/increment to force a fresh agent pass.
+                "seed": ("INT", {"default": 0, "min": 0,
+                                 "max": 0xffffffffffffffff,
+                                 "control_after_generate": True}),
             },
             "optional": {
                 "image": ("IMAGE",),
@@ -358,7 +365,10 @@ class SCG_Magic_JSON_BBoxer:
         return None
 
     def run(self, prompt, provider, aspect_ratio, megapixels, temperature,
-            max_tokens, max_boxes, image=None):
+            max_tokens, max_boxes, seed=0, image=None):
+        # ``seed`` is intentionally unused: it only participates in ComfyUI's
+        # input hash so the user can lock ("fixed") the node and skip re-running
+        # the agent chain, reusing the cached output from the previous run.
         prompt = (prompt or "").strip()
         provider_id = self._resolve_provider_id(provider)
         if not provider_id:
