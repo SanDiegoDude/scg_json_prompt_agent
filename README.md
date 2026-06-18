@@ -57,6 +57,7 @@ It emits the same Ideogram JSON shape as the builder.
 | `prompt` | STRING — drives the whole chain (creative fields + layout). |
 | `image` | IMAGE (optional) — reference for style and box placement; boxes still conform to the canvas, not the image frame. |
 | `provider` | The AI provider to use (from your `.env`). |
+| `bypass` | When **True**, skips every agent call and passes `prompt` straight through to `json_prompt` (no creative/summary/bbox processing). `width`/`height` are still computed from `aspect_ratio`/`megapixels`. Handy for feeding a hand-written JSON prompt through the same wiring. |
 | `aspect_ratio`, `megapixels` | Control the output canvas / `width`·`height`. |
 | `temperature`, `max_tokens` | Passed to the provider. |
 | `max_boxes` | Cap on how many layout boxes the agent may place. |

@@ -325,6 +325,9 @@ class SCG_Magic_JSON_BBoxer:
             "required": {
                 "prompt": ("STRING", {"multiline": True, "default": ""}),
                 "provider": (provider_labels,),
+                # When True the node skips ALL agent calls and passes the prompt
+                # straight to the json_prompt output (width/height still emitted).
+                "bypass": ("BOOLEAN", {"default": False}),
                 "aspect_ratio": (RATIO_LIST, {"default": "1:1"}),
                 "megapixels": ("FLOAT", {"default": 1.0, "min": 0.01,
                                          "max": 100.0, "step": 0.01}),
@@ -365,11 +368,19 @@ class SCG_Magic_JSON_BBoxer:
         return None
 
     def run(self, prompt, provider, aspect_ratio, megapixels, temperature,
-            max_tokens, max_boxes, seed=0, image=None):
+            max_tokens, max_boxes, bypass=False, seed=0, image=None):
         # ``seed`` is intentionally unused: it only participates in ComfyUI's
         # input hash so the user can lock ("fixed") the node and skip re-running
         # the agent chain, reusing the cached output from the previous run.
-        prompt = (prompt or "").strip()
+        raw_prompt = prompt or ""
+        dims = compute_render_dims(aspect_ratio, megapixels, self._DIVISIBLE_BY)
+
+        # Bypass: short-circuit the prompt straight to the output, no agent
+        # calls at all. Width/height are still computed and emitted.
+        if bypass:
+            return (raw_prompt, int(dims["width"]), int(dims["height"]))
+
+        prompt = raw_prompt.strip()
         provider_id = self._resolve_provider_id(provider)
         if not provider_id:
             raise RuntimeError(
@@ -381,7 +392,6 @@ class SCG_Magic_JSON_BBoxer:
 
         schema = self._USE_SCHEMA
         max_boxes = int(_clamp(int(max_boxes or 10), 1, 50))
-        dims = compute_render_dims(aspect_ratio, megapixels, self._DIVISIBLE_BY)
 
         img_url = image_to_data_url(image) if image is not None else None
 
