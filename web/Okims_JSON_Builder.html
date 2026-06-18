@@ -138,6 +138,12 @@
   .helpBtn:hover::before{opacity:.45;filter:drop-shadow(0 0 2px var(--help-ant-color))}
   body.agentGlobalBusy .helpBtn::before{opacity:1;animation:helpAntSpin 1.4s linear infinite;filter:drop-shadow(0 0 3px var(--help-ant-color))}
   @keyframes helpAntSpin{to{transform:rotate(360deg)}}
+  .helpBtn.locked{cursor:not-allowed;opacity:.6}
+  .helpBtn.locked::before{display:none}
+  .lockBtn{width:22px;height:22px;border-radius:50%;padding:0;display:inline-flex;align-items:center;justify-content:center;font-size:11px;background:transparent;border:0;color:var(--text);cursor:pointer;flex:0 0 auto;opacity:.38;filter:grayscale(1);transition:opacity .15s,filter .15s,text-shadow .15s}
+  .lockBtn:hover{opacity:.7;filter:grayscale(.4)}
+  .lockBtn.active{opacity:1;filter:none;text-shadow:0 0 6px color-mix(in srgb,var(--accent) 80%,transparent)}
+  input.fieldLocked,textarea.fieldLocked{border-color:color-mix(in srgb,var(--accent) 55%,var(--line));background:color-mix(in srgb,var(--accent) 7%,var(--field));opacity:.9;cursor:not-allowed}
   input,select,textarea,button{font:inherit}
   input[type="text"],input[type="number"],select,textarea{width:100%;background:var(--field);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:calc(7px * var(--ui)) calc(8px * var(--ui));outline:none}
   textarea{min-height:calc(58px * var(--ui));resize:none;line-height:1.35}
@@ -572,22 +578,22 @@
 
     <div class="row captionMediumRow">
       <div><label class="labelLine"><span data-i18n="captionType">Caption Type</span></label><select id="captionType"><option value="photo" data-i18n="photoCaption">Photo</option><option value="art_style" data-i18n="artCaption">Art / illustration</option></select></div>
-      <div><label class="labelLine"><span data-i18n="medium">Medium</span><button class="helpBtn" data-help="medium" type="button">🔨</button></label><input id="medium" type="text" value="photograph" data-placeholder="mediumPh" placeholder="photograph / illustration / graphic_design"></div>
+      <div><label class="labelLine"><span data-i18n="medium">Medium</span><button class="helpBtn" data-help="medium" type="button">🔨</button><button class="lockBtn" data-lock="medium" type="button" title="Lock this field (blocks AI edits, survives Clear/Reset)">🔒</button></label><input id="medium" type="text" value="photograph" data-placeholder="mediumPh" placeholder="photograph / illustration / graphic_design"></div>
     </div>
 
-    <label class="labelLine"><span data-i18n="subject">Subject / High Level Description</span><button class="helpBtn" data-help="subject" type="button">🔨</button></label>
+    <label class="labelLine"><span data-i18n="subject">Subject / High Level Description</span><button class="helpBtn" data-help="subject" type="button">🔨</button><button class="lockBtn" data-lock="subject" type="button" title="Lock this field (blocks AI edits, survives Clear/Reset)">🔒</button></label>
     <textarea id="high" data-placeholder="subjectPh" placeholder="Summarize the whole image and visible subject in 1-2 sentences"></textarea>
 
-    <label class="labelLine"><span data-i18n="style">Style / Aesthetics</span><button class="helpBtn" data-help="style" type="button">🔨</button></label>
+    <label class="labelLine"><span data-i18n="style">Style / Aesthetics</span><button class="helpBtn" data-help="style" type="button">🔨</button><button class="lockBtn" data-lock="style" type="button" title="Lock this field (blocks AI edits, survives Clear/Reset)">🔒</button></label>
     <textarea id="aesthetics" data-placeholder="stylePh" placeholder="documentary, cinematic, fashion editorial ..."></textarea>
 
-    <label class="labelLine"><span data-i18n="lighting">Lighting</span><button class="helpBtn" data-help="lighting" type="button">🔨</button></label>
+    <label class="labelLine"><span data-i18n="lighting">Lighting</span><button class="helpBtn" data-help="lighting" type="button">🔨</button><button class="lockBtn" data-lock="lighting" type="button" title="Lock this field (blocks AI edits, survives Clear/Reset)">🔒</button></label>
     <textarea id="lighting" data-placeholder="lightingPh" placeholder="soft daylight, harsh flash, fluorescent light ..."></textarea>
 
-    <label id="styleLabel" class="labelLine"><span data-i18n="camera">Camera / Photo</span><button class="helpBtn" data-help="camera" type="button">🔨</button></label>
+    <label id="styleLabel" class="labelLine"><span data-i18n="camera">Camera / Photo</span><button class="helpBtn" data-help="camera" type="button">🔨</button><button class="lockBtn" data-lock="camera" type="button" title="Lock this field (blocks AI edits, survives Clear/Reset)">🔒</button></label>
     <textarea id="styleField" data-placeholder="cameraPh" placeholder="35mm lens, handheld, eye-level, close-up ..."></textarea>
 
-    <label class="labelLine"><span data-i18n="background">Background</span><button class="helpBtn" data-help="background" type="button">🔨</button></label>
+    <label class="labelLine"><span data-i18n="background">Background</span><button class="helpBtn" data-help="background" type="button">🔨</button><button class="lockBtn" data-lock="background" type="button" title="Lock this field (blocks AI edits, survives Clear/Reset)">🔒</button></label>
     <textarea id="background" data-placeholder="backgroundPh" placeholder="Describe the background/environment. Goes into compositional_deconstruction.background."></textarea>
 
     <div class="globalColorSection" style="display:none" aria-hidden="true">
@@ -832,6 +838,9 @@
   const workspace = $('stageWorkspace');
   const LS_FOLDER = (()=>{ try{ return location.href.replace(/[?#].*$/, '').replace(/\/[^\/]*$/, '/'); }catch(e){ return 'default-folder'; } })();
   const LS = 'i4jsonbuilder_autosave_v4::' + LS_FOLDER;
+  // Field locks live in their own key so they (and the locked values) survive a
+  // hard reset, which wipes the main autosave key above.
+  const LOCKS_LS = 'scg_field_locks::' + LS_FOLDER;
   const noteFields = ['memo','a','b','c','d'];
   // One combined list, widest landscape -> square -> tallest portrait.
   const RATIO_LIST = [
@@ -854,6 +863,7 @@
   const state = {
     lang:'en', theme:'mocha', fontScale:'0.9', uiScale:'1', orientation:'horizontal', aspectRatio:'16:9', megapixels:1, divisibleBy:8,
     boxes: [], selected: null, selectedAll:false, globalPalette: [], drag: null, nextId: 1,
+    fieldLocks:{medium:false, subject:false, style:false, lighting:false, camera:false, background:false},
     leftPane:330, rightPane:390, canvasAreaHeight:520, elementsDockHeight:240, layoutDrag:null, autosaveReady:false, pendingNewBoxBbox:null, editColorBoxId:null, lastNewBoxColor:'#7AA2FF', antColor:'yellow', gridSize:10, centerGuides:true, impactCols:4, impactRows:4, impactBoxSel:null, stageZoom:1, tagScale:1, snapEnabled:true, gridSnapEnabled:false, snapStrength:14, panTool:false, spacePan:false, panDrag:null, stageBaseW:0, stageBaseH:0, skipNextExternalJsonLoad:false
   };
   let settingsFileHandle = null;
@@ -1909,7 +1919,7 @@ function moveBoxLayer(id, direction){
   async function saveSettingsFile(){
     downloadSettingsFile();
   }
-  function refreshAfterSettingsLoad(){ setupTextareaResizers(); applyTextareaHeights(); applyLayout(); applyTheme(); applyScale(); applyCanvasControls(false); populateRatios(); applyRenderControls(); applyLanguage(); renderAll(); }
+  function refreshAfterSettingsLoad(){ setupTextareaResizers(); applyTextareaHeights(); applyLayout(); applyTheme(); applyScale(); applyCanvasControls(false); populateRatios(); applyRenderControls(); applyLanguage(); loadLocks(); renderAll(); }
   async function loadSettingsObject(obj){
     if(!obj || typeof obj!=='object') throw new Error('invalid settings file');
     restoreSnapshot(obj);
@@ -1970,7 +1980,48 @@ function moveBoxLayer(id, direction){
   let sbRefImage=null;   // modal-only reference image; never persisted
   let sbBusy=false;
   function sbFieldValue(key){ const el=$(SECTION_FIELD[key]); return el ? (el.value||'') : ''; }
+  /* ---- Per-field locks ---------------------------------------------------
+     A locked field can't be edited by hand, can't be overwritten by the agent
+     (global/feeling-lucky/reprocess/section-builder), and keeps its value
+     through both "Clear inputs" and a hard reset. Locks + the locked values
+     persist in their own localStorage key so they survive the hard reset that
+     wipes the main autosave key. */
+  function isFieldLocked(key){ return !!(state.fieldLocks && state.fieldLocks[key]); }
+  function saveLocks(){
+    try{
+      const values={};
+      Object.keys(SECTION_FIELD).forEach(k=>{ if(isFieldLocked(k)){ const el=$(SECTION_FIELD[k]); if(el) values[k]=el.value; } });
+      localStorage.setItem(LOCKS_LS, JSON.stringify({locks:state.fieldLocks, values}));
+    }catch(e){}
+  }
+  function applyLockUI(){
+    Object.keys(SECTION_FIELD).forEach(k=>{
+      const locked=isFieldLocked(k);
+      const lockBtn=document.querySelector('.lockBtn[data-lock="'+k+'"]');
+      if(lockBtn){ lockBtn.classList.toggle('active',locked); lockBtn.textContent=locked?'🔒':'🔓'; lockBtn.title=locked?'Unlock this field':'Lock this field (blocks AI edits, survives Clear/Reset)'; }
+      const help=document.querySelector('.helpBtn[data-help="'+k+'"]');
+      if(help){ help.classList.toggle('locked',locked); help.textContent=locked?'🚫':'🔨'; help.disabled=locked; help.title=locked?'Field locked — unlock to use the AI builder':''; }
+      const el=$(SECTION_FIELD[k]);
+      if(el){ el.readOnly=locked; el.classList.toggle('fieldLocked',locked); }
+    });
+  }
+  function setFieldLock(key,on){
+    if(!state.fieldLocks || !(key in state.fieldLocks)) return;
+    state.fieldLocks[key]=!!on;
+    applyLockUI(); saveLocks(); autoSaveDebounced();
+  }
+  function loadLocks(){
+    let data=null;
+    try{ data=JSON.parse(localStorage.getItem(LOCKS_LS)||'null'); }catch(e){}
+    if(data && data.locks){
+      Object.keys(state.fieldLocks).forEach(k=>{ state.fieldLocks[k]=!!data.locks[k]; });
+      if(data.values){ Object.keys(data.values).forEach(k=>{ if(state.fieldLocks[k]){ const el=$(SECTION_FIELD[k]); if(el && typeof data.values[k]==='string') el.value=data.values[k]; } }); }
+    }
+    applyLockUI();
+  }
+
   function openSectionBuilder(key){
+    if(isFieldLocked(key)) return;  // locked field — AI builder is off-limits
     const meta=SECTION_META[key]; if(!meta) return;
     sbActiveKey=key;
     $('sbTitle').textContent=meta.title+' — AI builder';
@@ -2092,7 +2143,8 @@ function moveBoxLayer(id, direction){
   }
 
   function clearGlobalInputFields(){
-    ['medium','high','aesthetics','lighting','styleField','background'].forEach(id=>{ if($(id)) $(id).value=''; });
+    // Skip locked fields — a lock keeps its value through Clear inputs.
+    Object.keys(SECTION_FIELD).forEach(k=>{ if(isFieldLocked(k)) return; const el=$(SECTION_FIELD[k]); if(el) el.value=''; });
     // Also wipe layout boxes — leftover boxes aren't useful once everything else is cleared.
     state.boxes=[]; state.selected=null; state.selectedAll=false;
     renderAll();
@@ -2173,6 +2225,9 @@ function moveBoxLayer(id, direction){
   $('uiScale').addEventListener('change',()=>{ state.uiScale=$('uiScale').value; applyScale(); });
   $('aspectRatio').addEventListener('change',()=>{ state.aspectRatio=$('aspectRatio').value; populateRatios(); });
   document.querySelectorAll('.helpBtn').forEach(btn=>btn.addEventListener('click',()=>openSectionBuilder(btn.dataset.help)));
+  document.querySelectorAll('.lockBtn').forEach(btn=>btn.addEventListener('click',()=>setFieldLock(btn.dataset.lock, !isFieldLocked(btn.dataset.lock))));
+  // Keep the persisted locked value in sync when a locked field is edited (e.g. via Save-on-unlock workflows).
+  Object.keys(SECTION_FIELD).forEach(k=>{ const el=$(SECTION_FIELD[k]); if(el) el.addEventListener('input',()=>{ if(isFieldLocked(k)) saveLocks(); }); });
   $('sbClose').addEventListener('click', closeSectionBuilder);
   $('sbCancel').addEventListener('click', closeSectionBuilder);
   $('sectionBuilderOverlay').addEventListener('click',e=>{ if(e.target.id==='sectionBuilderOverlay') closeSectionBuilder(); });
@@ -2583,21 +2638,24 @@ function moveBoxLayer(id, direction){
     captureAiUndoSnapshot();
     const sd=obj.style_description||{};
     const comp=obj.compositional_deconstruction||{};
-    if(typeof obj.high_level_description==='string') $('high').value=obj.high_level_description;
-    if(typeof sd.aesthetics==='string') $('aesthetics').value=sd.aesthetics;
-    if(typeof sd.lighting==='string') $('lighting').value=sd.lighting;
-    if(typeof sd.medium==='string' && sd.medium.trim()) $('medium').value=sd.medium.trim();
+    // Locked fields are never overwritten by the agent.
+    if(!isFieldLocked('subject') && typeof obj.high_level_description==='string') $('high').value=obj.high_level_description;
+    if(!isFieldLocked('style') && typeof sd.aesthetics==='string') $('aesthetics').value=sd.aesthetics;
+    if(!isFieldLocked('lighting') && typeof sd.lighting==='string') $('lighting').value=sd.lighting;
+    if(!isFieldLocked('medium') && typeof sd.medium==='string' && sd.medium.trim()) $('medium').value=sd.medium.trim();
     const photo=(typeof sd.photo==='string'?sd.photo:'').trim();
     // The agent owns the Photo/Art switch via an explicit boolean; fall back to
     // inference only for older responses that don't include it.
     const isPhoto = (typeof obj.photographic==='boolean')
       ? obj.photographic
       : (photo.length>0 || /photo/i.test(sd.medium||''));
-    $('captionType').value = isPhoto ? 'photo' : 'art_style';
-    $('styleField').value = isPhoto ? photo : '';
+    if(!isFieldLocked('camera')){
+      $('captionType').value = isPhoto ? 'photo' : 'art_style';
+      $('styleField').value = isPhoto ? photo : '';
+    }
     const bg = (typeof comp.background==='string') ? comp.background
              : (typeof obj.background==='string' ? obj.background : null);
-    if(bg!=null) $('background').value=bg;
+    if(!isFieldLocked('background') && bg!=null) $('background').value=bg;
     if(Array.isArray(sd.color_palette)){
       const pal=sd.color_palette.map(normHex).filter(Boolean).slice(0,16);
       if(pal.length) state.globalPalette=pal;
@@ -3046,7 +3104,7 @@ function moveBoxLayer(id, direction){
   applyLayout();
   state.autosaveReady=true;
   installAutosaveGuards();
-  applyTheme(); applyScale(); populateRatios(); applyRenderControls(); applyLanguage(); updatePanCursor(); renderAll(); autoSave();
+  applyTheme(); applyScale(); populateRatios(); applyRenderControls(); applyLanguage(); loadLocks(); updatePanCursor(); renderAll(); autoSave();
 })();
 </script>
 </body>
