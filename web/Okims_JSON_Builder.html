@@ -390,6 +390,15 @@
   .refPreview[hidden]{display:none}
   .refClear{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;border:1px solid color-mix(in srgb,var(--text) 30%,transparent);background:color-mix(in srgb,var(--bg) 80%,#000 20%);color:var(--text);cursor:pointer;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center}
   .refClear:hover{border-color:var(--danger);color:var(--danger)}
+  .refClear:disabled{opacity:.35;cursor:not-allowed;border-color:color-mix(in srgb,var(--text) 30%,transparent);color:var(--text)}
+  .refLock{position:absolute;top:6px;left:6px;width:24px;height:24px;border-radius:50%;border:1px solid color-mix(in srgb,var(--text) 30%,transparent);background:color-mix(in srgb,var(--bg) 80%,#000 20%);color:var(--text);cursor:pointer;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center;z-index:2}
+  .refLock:hover{border-color:var(--accent);color:var(--accent)}
+  .refLock.active{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 18%,var(--panel2))}
+  .refDrop.locked{cursor:default;border-style:solid;border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+  .ratioRow{display:flex;gap:6px;align-items:stretch}
+  .ratioRow select{flex:1 1 auto;min-width:0}
+  .ratioMatchBtn{flex:0 0 auto;width:36px;padding:0;display:inline-flex;align-items:center;justify-content:center;font-size:15px;line-height:1}
+  .ratioMatchBtn:hover{border-color:var(--accent);color:var(--accent)}
   .vlmRow{display:flex;gap:8px;align-items:center}
   .vlmRow .vlmEndpoint{flex:1;min-width:0;font-size:12px}
   .vlmRow button#enhanceBtn{white-space:nowrap}
@@ -448,6 +457,33 @@
   .slimToolbar .bboxAgentBar{flex:1 1 auto;margin:0;min-width:0}
   @media(max-width:1280px){.slimToolbar{flex-wrap:wrap}.slimToolbar .toolDivider{display:none}}
 
+  /* Right-column top-level tabs (JSON output / Workflow output) */
+  .rightTabs{display:flex;gap:4px;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:4px;margin-bottom:10px}
+  .rightTab{flex:1 1 auto;padding:7px 10px;font-size:12px;font-weight:700;background:transparent;border-color:transparent;color:var(--text)}
+  .rightTab.active{background:var(--accent);border-color:var(--accent);color:#fff}
+  .rightPane{display:none}
+  .rightPane.active{display:block}
+  /* Workflow output */
+  .genBox{position:relative;width:100%;min-height:180px;border:1px solid var(--line);border-radius:10px;background:color-mix(in srgb,var(--bg) 80%,#000);display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:8px}
+  .genBox img{max-width:100%;max-height:58vh;display:block;border-radius:8px;cursor:zoom-in}
+  .genBox img[hidden]{display:none}
+  /* Click-to-zoom lightbox for the render preview */
+  .genLightbox{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;cursor:zoom-out;padding:24px;box-sizing:border-box}
+  .genLightbox[hidden]{display:none}
+  .genLightbox img{max-width:100%;max-height:100%;object-fit:contain;border-radius:6px;box-shadow:0 18px 60px rgba(0,0,0,.6)}
+  .genEmpty{color:var(--muted);font-size:12px;padding:34px 14px;text-align:center}
+  .genProgress{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .genBar{flex:1 1 auto;height:8px;border-radius:999px;background:var(--field);overflow:hidden;border:1px solid var(--line)}
+  .genBar>span{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+  .genPct{font-size:12px;color:var(--muted);min-width:36px;text-align:right}
+  .onDeckWrap{margin-top:14px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--panel2)}
+  .onDeckWrap>summary{cursor:pointer;font-weight:700;font-size:12px;color:var(--text);list-style:revert}
+  .onDeckPrompt{width:100%;min-height:80px;margin-top:8px;font-size:13px;resize:vertical}
+  .onDeckAutoWrap{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);cursor:pointer;white-space:nowrap}
+  .onDeckAutoWrap input{margin:0}
+  .runWorkflowBtn{background:linear-gradient(135deg,#7C5CFF,#C147E9);border-color:#9a6cff;color:#fff;font-weight:800;padding:11px 16px;font-size:13px;margin-right:auto}
+  .runWorkflowBtn:hover{filter:brightness(1.08)}
+  .runWorkflowBtn:disabled{opacity:.55;cursor:progress}
   /* Send to ComfyUI & Close (pinned bottom-right of the right column) */
   .sendCloseBar{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
   .sendCloseBtn{background:linear-gradient(135deg,#2e9e5b,#3fb36b);border-color:#3fb36b;color:#fff;font-weight:800;padding:11px 16px;font-size:13px}
@@ -555,6 +591,7 @@
 <main>
   <section class="panel sticky">
     <div class="settingsPanelActions" aria-label="settings save load">
+      <button id="minimizeBuilder" type="button" title="Minimize the builder to the top-left corner so you can see and use the workflow underneath">🗕 Minimize</button>
       <button id="saveSettingsTop" type="button" data-i18n="saveSettingsFile">Save preset</button>
       <button id="loadSettingsTop" type="button" data-i18n="loadSettingsFile">Load preset</button>
     </div>
@@ -568,6 +605,7 @@
         <input id="refFile" type="file" accept="image/*" hidden>
         <span id="refPlaceholder" class="refPlaceholder">Upload reference image — or drag &amp; drop</span>
         <img id="refPreview" class="refPreview" alt="reference image" hidden>
+        <button id="refLock" class="refLock" type="button" title="Lock reference image — keeps it pinned through Clear inputs / Run it!">🔓</button>
         <button id="refClear" class="refClear" type="button" title="Remove reference image" hidden>×</button>
       </div>
       <button id="enhanceBtn" class="primary" type="button" style="width:100%">Generate fields</button>
@@ -581,7 +619,10 @@
     </div>
 
     <label class="labelLine"><span data-i18n="aspectRatio">Aspect Ratio</span></label>
-    <select id="aspectRatio"></select>
+    <div class="ratioRow">
+      <select id="aspectRatio"></select>
+      <button id="matchRefAspect" class="ratioMatchBtn" type="button" title="Resize the canvas aspect ratio to match the loaded reference image (for manual placement before running)">📐</button>
+    </div>
     <div id="ratioStatus" class="hint"></div>
 
     <div class="row">
@@ -668,17 +709,20 @@
   <div id="splitRight" class="mainSplitter" title="Drag to resize right/JSON panel" aria-label="resize right panel"></div>
 
   <section class="panel sticky">
+    <div class="rightTabs" role="tablist">
+      <button class="rightTab active" data-rpane="json" type="button">JSON output</button>
+      <button class="rightTab" data-rpane="workflow" type="button">Workflow output</button>
+    </div>
+    <div class="rightPane active" data-rpaneview="json">
     <div class="title" data-i18n="jsonOutput">JSON Output</div>
     <div class="hint" data-i18n="jsonHint">Ideogram 4 is most stable when the JSON object is pasted as a string prompt. Output keeps the key order.</div>
     <textarea id="jsonOut" class="jsonOut" spellcheck="false"></textarea>
     <div class="btns">
-      <button id="copyJson" type="button" data-i18n="copyJson">Copy JSON</button>
-      <button id="loadJson" type="button" data-i18n="loadJson">Load file JSON</button>
-      <button id="pasteClipboardJson" type="button" data-i18n="pasteJson">Paste clipboard JSON</button>
-      <button id="downloadJson" type="button" data-i18n="saveJson">Save file JSON</button>
+      <button id="loadJson" type="button" data-i18n="loadJson" title="Load a .json prompt from a file">Load JSON</button>
+      <button id="deployJson" type="button" title="Apply the JSON in the box above to the builder (loads it onto the canvas)">Deploy JSON</button>
+      <button id="downloadJson" type="button" data-i18n="saveJson" title="Save the current prompt to a .json file">Save JSON</button>
     </div>
     <div id="rightStatus" class="status"></div>
-    <div class="hint" style="margin-top:12px" data-i18n="notice">Note: this file is a JSON Prompt Builder only. It does not run the model. Copy the JSON prompt to ComfyUI / SD.Next / Hugging Face Space / official inference.</div>
 
     <div class="agentConfig">
       <div class="title">Agent Configuration</div>
@@ -733,13 +777,49 @@
         <div id="uiConfigMount"></div>
       </div>
     </div>
+    </div>
+
+    <div class="rightPane" data-rpaneview="workflow">
+      <div class="title">Workflow output</div>
+      <div class="hint">Run the open ComfyUI workflow and iterate without leaving the builder. The builder must stay open during the run; results stream in below.</div>
+      <div id="genBox" class="genBox">
+        <img id="genResult" alt="generation result" hidden>
+        <div id="genEmpty" class="genEmpty">No render yet — hit <b>Run Workflow</b> below.</div>
+      </div>
+      <div id="genProgress" class="genProgress" hidden><div class="genBar"><span></span></div><span class="genPct">0%</span></div>
+      <div id="genStatus" class="status"></div>
+      <div class="btns">
+        <button id="loadGenAsRef" type="button" disabled title="Use the latest render as the reference image (resized ~0.5 MP)">Load as reference image</button>
+        <button id="saveGenImage" type="button" disabled title="Save the latest render to your computer">💾 Save image</button>
+        <button id="genInterruptBtn" type="button" title="Interrupt the running ComfyUI workflow">Interrupt</button>
+      </div>
+
+      <details id="lastRoundWrap" class="onDeckWrap" hidden>
+        <summary>Last Round Prompt</summary>
+        <textarea id="lastRoundPrompt" class="onDeckPrompt" readonly title="The prompt that was used the last time you ran 'Run it!' (read-only)"></textarea>
+      </details>
+
+      <details id="onDeckWrap" class="onDeckWrap">
+        <summary>On-deck prompt (next round)</summary>
+        <textarea id="onDeckPrompt" class="onDeckPrompt" placeholder="Caught from the workflow's next-round string node — or type your own. 'Run it!' clears inputs (keeping locked fields), rebuilds the scene through the agent, then fires the generation."></textarea>
+        <div class="btns">
+          <button id="onDeckClear" type="button">Clear</button>
+          <button id="onDeckCopy" type="button">Copy</button>
+          <button id="onDeckRun" class="primary" type="button" title="Clear inputs (keep locks), load this prompt, rebuild via the agent, then generate">▶ Run it!</button>
+          <label class="onDeckAutoWrap" title="When Run Workflow is clicked, automatically perform the Run it! sequence (rebuild from this prompt) first"><input type="checkbox" id="onDeckAuto"> Auto on Run Workflow</label>
+        </div>
+      </details>
+    </div>
 
     <div class="sendCloseBar">
+      <button id="runWorkflowBtn" class="runWorkflowBtn" type="button" hidden title="Save the JSON to the node and queue the ComfyUI workflow (stays open so you can iterate)">▶ Run Workflow</button>
       <button id="cancelCloseBtn" class="cancelCloseBtn" type="button" title="Close without sending any changes to the ComfyUI node">✕ Cancel</button>
-      <button id="sendCloseBtn" class="sendCloseBtn" type="button" title="Send the JSON prompt to the ComfyUI node and close the builder">✔ Send to ComfyUI &amp; Close</button>
+      <button id="sendCloseBtn" class="sendCloseBtn" type="button" title="Save the JSON prompt to the ComfyUI node and close the builder">✔ Save &amp; Close</button>
     </div>
   </section>
 </main>
+
+<div id="genLightbox" class="genLightbox" hidden><img id="genLightboxImg" alt="render preview"></div>
 
 <div id="sectionBuilderOverlay" class="modalOverlay" aria-hidden="true">
   <div class="modal sectionBuilderModal" role="dialog" aria-modal="true" aria-labelledby="sbTitle">
@@ -862,6 +942,7 @@
   // Field locks live in their own key so they (and the locked values) survive a
   // hard reset, which wipes the main autosave key above.
   const LOCKS_LS = 'scg_field_locks::' + LS_FOLDER;
+  const REFLOCK_LS = 'scg_ref_lock::' + LS_FOLDER;
   const noteFields = ['memo','a','b','c','d'];
   // One combined list, widest landscape -> square -> tallest portrait.
   const RATIO_LIST = [
@@ -884,7 +965,7 @@
   const state = {
     lang:'en', theme:'mocha', fontScale:'0.9', uiScale:'1', orientation:'horizontal', aspectRatio:'16:9', megapixels:1, divisibleBy:8,
     boxes: [], selected: null, selectedAll:false, globalPalette: [], drag: null, nextId: 1,
-    fieldLocks:{medium:false, subject:false, style:false, lighting:false, camera:false, background:false},
+    fieldLocks:{medium:false, subject:false, style:false, lighting:false, camera:false, background:false}, refLocked:false,
     leftPane:330, rightPane:390, canvasAreaHeight:520, elementsDockHeight:240, layoutDrag:null, autosaveReady:false, pendingNewBoxBbox:null, editColorBoxId:null, lastNewBoxColor:'#7AA2FF', antColor:'yellow', gridSize:10, centerGuides:true, impactCols:4, impactRows:4, impactBoxSel:null, stageZoom:1, tagScale:1, snapEnabled:true, gridSnapEnabled:false, snapStrength:14, panTool:false, spacePan:false, panDrag:null, stageBaseW:0, stageBaseH:0, skipNextExternalJsonLoad:false, showRefBg:false
   };
   let settingsFileHandle = null;
@@ -1038,7 +1119,7 @@
 
   const EXTRA_I18N = {
     ko:{copyJson:'JSON 복사',loadJson:'파일 JSON 불러오기',saveJson:'파일 JSON 저장',pasteJson:'클립보드 JSON 붙여넣기',copyBox:'복사',selectAllTip:'전체 박스 선택',allBoxesSelected:'전체 박스 선택됨',clipboardReadFail:'클립보드 읽기 실패'},
-    en:{copyJson:'Copy JSON',loadJson:'Load file JSON',saveJson:'Save file JSON',pasteJson:'Paste clipboard JSON',copyBox:'Copy',selectAllTip:'Select all boxes',allBoxesSelected:'All boxes selected',clipboardReadFail:'Clipboard read failed'},
+    en:{copyJson:'Copy JSON',loadJson:'Load JSON',saveJson:'Save JSON',pasteJson:'Paste JSON',copyBox:'Copy',selectAllTip:'Select all boxes',allBoxesSelected:'All boxes selected',clipboardReadFail:'Clipboard read failed'},
     ja:{copyJson:'JSONをコピー',loadJson:'ファイルJSONを読み込み',saveJson:'ファイルJSONを保存',pasteJson:'クリップボードJSONを貼り付け',copyBox:'コピー',selectAllTip:'全ボックスを選択',allBoxesSelected:'全ボックス選択中',clipboardReadFail:'クリップボード読み取り失敗'},
     fr:{copyJson:'Copier JSON',loadJson:'Charger fichier JSON',saveJson:'Enregistrer fichier JSON',pasteJson:'Coller JSON du presse-papiers',copyBox:'Copier',selectAllTip:'Sélectionner toutes les boîtes',allBoxesSelected:'Toutes les boîtes sélectionnées',clipboardReadFail:'Échec lecture du presse-papiers'},
     zh:{copyJson:'复制 JSON',loadJson:'加载文件 JSON',saveJson:'保存文件 JSON',pasteJson:'粘贴剪贴板 JSON',copyBox:'复制',selectAllTip:'选择所有框',allBoxesSelected:'已选择所有框',clipboardReadFail:'读取剪贴板失败'},
@@ -1902,7 +1983,14 @@ function moveBoxLayer(id, direction){
     cap.render=computeRenderDims();
     return cap;
   }
-  function generateJson(show=true){ const json=JSON.stringify(captionObject(),null,2); $('jsonOut').value=json; if(show) setStatus('rightStatus',t('jsonDone'),'ok'); return json; }
+  let jsonOutDirty=false;   // true once the user manually edits the JSON box (un-loaded edits)
+  function generateJson(show=true){
+    const json=JSON.stringify(captionObject(),null,2);
+    // Silent (autosave) renders must not clobber un-loaded manual edits.
+    if(show || !jsonOutDirty){ $('jsonOut').value=json; }
+    if(show){ jsonOutDirty=false; setStatus('rightStatus',t('jsonDone'),'ok'); }
+    return (jsonOutDirty && !show) ? $('jsonOut').value : json;
+  }
   async function copyText(txt){ try{ await navigator.clipboard.writeText(txt); setStatus('rightStatus',t('copied'),'ok'); } catch(e){ $('jsonOut').select(); document.execCommand('copy'); setStatus('rightStatus',t('copyWarn'),'warn'); } }
 
   function getSnapshot(){
@@ -1911,9 +1999,11 @@ function moveBoxLayer(id, direction){
       boxes:state.boxes, selected:state.selected, selectedAll:state.selectedAll, nextId:state.nextId, globalPalette:state.globalPalette, leftPane:state.leftPane, rightPane:state.rightPane, canvasAreaHeight:state.canvasAreaHeight, elementsDockHeight:state.elementsDockHeight, lastNewBoxColor:state.lastNewBoxColor, antColor:state.antColor, gridSize:10, centerGuides:state.centerGuides, impactCols:state.impactCols, impactRows:state.impactRows, impactBoxSel:state.impactBoxSel, stageZoom:state.stageZoom, tagScale:state.tagScale, snapEnabled:state.snapEnabled, gridSnapEnabled:state.gridSnapEnabled, snapStrength:state.snapStrength, panTool:state.panTool, showRefBg:state.showRefBg, textareaHeights:state.textareaHeights||{}};
   }
   function snapshotText(){ return JSON.stringify(getSnapshot(), null, 2); }
+  // Save preset = the unified prompt JSON (same shape sent to the node), which
+  // doubles as a full builder-restore file. No more separate settings format.
   function downloadSettingsFile(){
-    const blob=new Blob([snapshotText()],{type:'application/json'});
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='setting.json'; a.click(); URL.revokeObjectURL(a.href);
+    const blob=new Blob([generateJson(false)],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='scg_prompt.json'; a.click(); URL.revokeObjectURL(a.href);
     setStatus('leftStatus',t('settingsFileSaved'),'ok');
   }
   async function writeSettingsFileNow(){
@@ -1950,11 +2040,16 @@ function moveBoxLayer(id, direction){
   async function saveSettingsFile(){
     downloadSettingsFile();
   }
-  function refreshAfterSettingsLoad(){ setupTextareaResizers(); applyTextareaHeights(); applyLayout(); applyTheme(); applyScale(); applyCanvasControls(false); populateRatios(); applyRenderControls(); applyLanguage(); loadLocks(); renderAll(); }
+  function refreshAfterSettingsLoad(){ setupTextareaResizers(); applyTextareaHeights(); applyLayout(); applyTheme(); applyScale(); applyCanvasControls(false); populateRatios(); applyRenderControls(); applyLanguage(); loadLocks(); applyRefLockUI(); renderAll(); }
   async function loadSettingsObject(obj){
-    if(!obj || typeof obj!=='object') throw new Error('invalid settings file');
-    restoreSnapshot(obj);
-    refreshAfterSettingsLoad();
+    if(!obj || typeof obj!=='object') throw new Error('invalid JSON file');
+    // Back-compat: older "setting.json" snapshots used a "form" block. Route
+    // those through restoreSnapshot; everything else is the unified prompt JSON.
+    if(obj.form && Array.isArray(obj.boxes) && !obj.compositional_deconstruction){
+      restoreSnapshot(obj); refreshAfterSettingsLoad();
+    } else {
+      loadObj(obj);
+    }
     setStatus('leftStatus',t('settingsFileLoaded'),'ok');
   }
   async function loadSettingsFile(){
@@ -2052,6 +2147,25 @@ function moveBoxLayer(id, direction){
     applyLockUI();
   }
 
+  // Reference-image lock — pins the image through Clear inputs / Run it! / Reset.
+  function isRefLocked(){ return !!state.refLocked; }
+  function applyRefLockUI(){
+    const btn=$('refLock'), drop=$('refDrop'), clear=$('refClear');
+    const locked=isRefLocked();
+    if(btn){ btn.classList.toggle('active',locked); btn.textContent=locked?'🔒':'🔓'; btn.title=locked?'Unlock reference image':'Lock reference image — keeps it pinned through Clear inputs / Run it!'; }
+    if(drop) drop.classList.toggle('locked',locked);
+    if(clear) clear.disabled=locked;
+  }
+  function setRefLock(on){
+    state.refLocked=!!on;
+    try{ localStorage.setItem(REFLOCK_LS, state.refLocked?'1':'0'); }catch(e){}
+    applyRefLockUI(); autoSaveDebounced();
+  }
+  function loadRefLock(){
+    try{ state.refLocked = localStorage.getItem(REFLOCK_LS)==='1'; }catch(e){ state.refLocked=false; }
+    applyRefLockUI();
+  }
+
   function openSectionBuilder(key){
     if(isFieldLocked(key)) return;  // locked field — AI builder is off-limits
     const meta=SECTION_META[key]; if(!meta) return;
@@ -2142,9 +2256,15 @@ function moveBoxLayer(id, direction){
     $('high').value=obj.high_level_description||''; const style=obj.style_description||{}; $('captionType').value = style.photo!==undefined ? 'photo' : 'art_style'; updateStyleLabel(); $('aesthetics').value=style.aesthetics||''; $('lighting').value=style.lighting||''; $('medium').value=style.medium||''; $('styleField').value = style.photo!==undefined ? (style.photo||'') : (style.art_style||''); state.globalPalette=Array.isArray(style.color_palette)?style.color_palette.map(normHex).filter(Boolean).slice(0,16):[];
     const comp=obj.compositional_deconstruction||{}; $('background').value=comp.background||''; state.boxes=[]; state.selected=null; state.selectedAll=false; state.nextId=1; const arr=Array.isArray(comp.elements)?comp.elements:[];
     for(const el of arr){ const id=state.nextId++; const b={id,type:el.type==='text'?'text':'obj',name:labelNoSpace(el.label||el.name||''),text:el.text||'',desc:el.desc||'',bbox:Array.isArray(el.bbox)?el.bbox:[250,250,750,750],color:'#7AA2FF',palette:Array.isArray(el.color_palette)?el.color_palette.map(normHex).filter(Boolean).slice(0,5):[]}; sanitizeBox(b); state.boxes.push(b); }
-    state.selected=state.boxes[0]?.id||null; renderAll(); autoSave();
+    // Restore the render controls so a saved prompt fully rehydrates the canvas.
+    const r=obj.render||{};
+    if(typeof r.aspect_ratio==='string' && RATIO_LIST.includes(r.aspect_ratio)){ state.aspectRatio=r.aspect_ratio; state.orientation=ratioOrientation(r.aspect_ratio); }
+    if(r.megapixels!=null && isFinite(parseFloat(r.megapixels))) state.megapixels=clamp(parseFloat(r.megapixels),0.01,100);
+    if([8,16,32,64].includes(+r.divisible_by)) state.divisibleBy=+r.divisible_by;
+    populateRatios(); applyRenderControls();
+    state.selected=state.boxes[0]?.id||null; renderAll(); updateStageSize(); autoSave();
   }
-  function loadJsonFromTextarea(){ try{ const obj=JSON.parse($('jsonOut').value); loadObj(obj); setStatus('rightStatus',t('jsonLoaded'),'ok'); } catch(e){ setStatus('rightStatus',`${t('jsonFail')}: ${e.message}`,'err'); } }
+  function loadJsonFromTextarea(){ try{ const obj=JSON.parse($('jsonOut').value); jsonOutDirty=false; loadObj(obj); setStatus('rightStatus',t('jsonLoaded'),'ok'); } catch(e){ setStatus('rightStatus',`${t('jsonFail')}: ${e.message}`,'err'); } }
 
   function updateResetModalText(){
     const phrase=$('resetPhraseText'); if(phrase) phrase.textContent=t('resetPhrase');
@@ -2169,6 +2289,17 @@ function moveBoxLayer(id, direction){
     if($('simplePrompt')) $('simplePrompt').value='';
     try{ localStorage.removeItem(VLM_PROMPT_LS); }catch(e){}
     clearRefImage();
+    // Clear the on-deck prompt + last-round prompt + generation result (Workflow output tab).
+    if($('onDeckPrompt')) $('onDeckPrompt').value='';
+    try{ localStorage.removeItem(ONDECK_TEXT_LS); }catch(e){}
+    if($('lastRoundPrompt')) $('lastRoundPrompt').value='';
+    if($('lastRoundWrap')) $('lastRoundWrap').hidden=true;
+    try{ localStorage.removeItem(LASTROUND_TEXT_LS); }catch(e){}
+    if($('genResult')){ $('genResult').hidden=true; $('genResult').removeAttribute('src'); }
+    if($('genEmpty')) $('genEmpty').hidden=false;
+    if($('loadGenAsRef')) $('loadGenAsRef').disabled=true;
+    if($('saveGenImage')) $('saveGenImage').disabled=true;
+    genResultURL='';
     refreshAfterSettingsLoad();
     autoSave();
     setStatus('leftStatus',t('resetDone'),'ok');
@@ -2177,6 +2308,8 @@ function moveBoxLayer(id, direction){
   function clearGlobalInputFields(){
     // Skip locked fields — a lock keeps its value through Clear inputs.
     Object.keys(SECTION_FIELD).forEach(k=>{ if(isFieldLocked(k)) return; const el=$(SECTION_FIELD[k]); if(el) el.value=''; });
+    // Clear the reference image too (a fresh run) — unless it's locked.
+    clearRefImage();
     // Also wipe layout boxes — leftover boxes aren't useful once everything else is cleared.
     state.boxes=[]; state.selected=null; state.selectedAll=false;
     renderAll();
@@ -2256,6 +2389,7 @@ function moveBoxLayer(id, direction){
   $('fontScale').addEventListener('change',()=>{ state.fontScale=$('fontScale').value; applyScale(); });
   $('uiScale').addEventListener('change',()=>{ state.uiScale=$('uiScale').value; applyScale(); });
   $('aspectRatio').addEventListener('change',()=>{ state.aspectRatio=$('aspectRatio').value; populateRatios(); });
+  if($('matchRefAspect')) $('matchRefAspect').addEventListener('click', alignAspectToRefImageNow);
   document.querySelectorAll('.helpBtn').forEach(btn=>btn.addEventListener('click',()=>openSectionBuilder(btn.dataset.help)));
   document.querySelectorAll('.lockBtn').forEach(btn=>btn.addEventListener('click',()=>setFieldLock(btn.dataset.lock, !isFieldLocked(btn.dataset.lock))));
   // Keep the persisted locked value in sync when a locked field is edited (e.g. via Save-on-unlock workflows).
@@ -2372,8 +2506,10 @@ function moveBoxLayer(id, direction){
     autoSaveDebounced();
   }, {passive:false});
   $('addFullBox').addEventListener('click',()=>setDrawArmed(!state.drawArmed)); $('clearBoxes').addEventListener('click',()=>{state.boxes=[]; state.selected=null; state.selectedAll=false; renderAll();});
-  $('copyJson').addEventListener('click',()=>copyText(generateJson(false))); $('loadJson').addEventListener('click',()=>{ const input=$('jsonFileInput'); if(input){ input.value=''; input.click(); } else { loadJsonFromTextarea(); } });
-  $('pasteClipboardJson').addEventListener('click',async()=>{ try{ const txt=await navigator.clipboard.readText(); $('jsonOut').value=txt; loadJsonFromTextarea(); } catch(e){ setStatus('rightStatus',`${t('clipboardReadFail')}: ${e.message}`,'err'); } });
+  $('jsonOut').addEventListener('input',()=>{ jsonOutDirty=true; });
+  // Load JSON = open a .json file; Deploy JSON = apply the box contents to the builder.
+  $('loadJson').addEventListener('click',()=>{ const input=$('jsonFileInput'); if(input){ input.value=''; input.click(); } else { loadJsonFromTextarea(); } });
+  $('deployJson').addEventListener('click', loadJsonFromTextarea);
   $('downloadJson').addEventListener('click',()=>{ const blob=new Blob([generateJson(false)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='ideogram4_prompt.json'; a.click(); URL.revokeObjectURL(a.href); });
   const jsonFileInput=$('jsonFileInput'); if(jsonFileInput){ jsonFileInput.addEventListener('change',async e=>{ const file=e.target.files && e.target.files[0]; if(!file) return; try{ const txt=await file.text(); loadObj(JSON.parse(txt)); setStatus('rightStatus',t('jsonLoaded'),'ok'); e.target.value=''; } catch(err){ setStatus('rightStatus',`${t('jsonFail')}: ${err.message}`,'err'); } }); }
   $('saveSettingsTop').addEventListener('click',saveSettingsFile);
@@ -2785,6 +2921,7 @@ function moveBoxLayer(id, direction){
   }
 
   async function setRefImageFromFile(file){
+    if(isRefLocked()){ setStatus('vlmStatus','Reference image is locked. Unlock it to replace the image.','warn'); return; }
     if(!file || !(file.type||'').startsWith('image/')){ setStatus('vlmStatus','That file is not an image.','warn'); return; }
     try{
       setStatus('vlmStatus','Processing image…','');
@@ -2795,6 +2932,7 @@ function moveBoxLayer(id, direction){
   }
 
   function clearRefImage(){
+    if(isRefLocked()) return;   // locked image survives Clear inputs / Run it! / Reset
     applyRefImage(null, true);
     if($('refFile')) $('refFile').value='';
   }
@@ -3015,6 +3153,15 @@ function moveBoxLayer(id, direction){
     if(label!==state.aspectRatio){ state.aspectRatio=label; populateRatios(); }
     return true;
   }
+  // Manual, on-demand version of the above (ignores the "Match ref AR" checkbox)
+  // so users can size the canvas to the reference image before running.
+  async function alignAspectToRefImageNow(){
+    if(!vlmRefImage){ setStatus('ratioStatus','Load a reference image first to match its aspect ratio.','warn'); return false; }
+    const label=closestRatioLabel(await imageAspectFromDataUrl(vlmRefImage));
+    if(!label){ setStatus('ratioStatus','Could not read the reference image dimensions.','warn'); return false; }
+    if(label!==state.aspectRatio){ state.aspectRatio=label; populateRatios(); }
+    return true;
+  }
   async function runBboxAgent(){
     if(agentBusy) return;
     const prompt=($('bboxPrompt')?.value||'').trim();
@@ -3102,6 +3249,9 @@ function moveBoxLayer(id, direction){
       drop.addEventListener('drop',(e)=>{ const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; if(f) setRefImageFromFile(f); });
     }
     if(clearBtn) clearBtn.addEventListener('click',(e)=>{ e.stopPropagation(); clearRefImage(); });
+    const refLockBtn=$('refLock');
+    if(refLockBtn) refLockBtn.addEventListener('click',(e)=>{ e.stopPropagation(); setRefLock(!isRefLocked()); });
+    loadRefLock();
     // Restore the raw prompt + reference image saved from a previous session.
     const sp=$('simplePrompt');
     if(sp){
@@ -3179,7 +3329,163 @@ function moveBoxLayer(id, direction){
     if(cc) cc.addEventListener('click',()=>{ try{ if(window.parent && window.parent!==window) window.parent.postMessage({type:'okimsClose'},'*'); }catch(e){} });
   })();
 
+  /* ---- In-UI generation loop (Workflow output tab) --------------------- */
+  const RIGHT_TAB_LS='scg_right_tab';
+  const ONDECK_OPEN_LS='scg_ondeck_open';
+  const ONDECK_TEXT_LS='scg_ondeck_text';
+  const ONDECK_AUTO_LS='scg_ondeck_auto';
+  const LASTROUND_TEXT_LS='scg_lastround_text';
+  const LASTROUND_OPEN_LS='scg_lastround_open';
+  let genBusy=false, genResultURL='';
+
+  function postParent(type){ try{ if(window.parent && window.parent!==window) window.parent.postMessage({type},'*'); }catch(e){} }
+
+  function genSetBusy(on){
+    genBusy=!!on;
+    const r=$('runWorkflowBtn'); if(r) r.disabled=genBusy;
+    const od=$('onDeckRun'); if(od) od.disabled=genBusy;
+    const p=$('genProgress');
+    if(genBusy){ if(p) p.hidden=false; genSetProgress(0); setStatus('genStatus','Running workflow…',''); }
+    else { if(p) p.hidden=true; }
+  }
+  function genSetProgress(pct){
+    pct=Math.max(0,Math.min(100,Math.round(pct||0)));
+    const p=$('genProgress'); if(p) p.hidden=false;
+    const bar=p&&p.querySelector('.genBar>span'); if(bar) bar.style.width=pct+'%';
+    const lbl=p&&p.querySelector('.genPct'); if(lbl) lbl.textContent=pct+'%';
+  }
+  function genSetResult(url){
+    genResultURL=url||'';
+    const img=$('genResult'), empty=$('genEmpty'), btn=$('loadGenAsRef'), save=$('saveGenImage'), p=$('genProgress');
+    if(url){ if(img){ img.src=url; img.hidden=false; } if(empty) empty.hidden=true; if(btn) btn.disabled=false; if(save) save.disabled=false; setStatus('genStatus','Render complete.','ok'); }
+    if(p) p.hidden=true;
+  }
+  function setLastRoundPrompt(text){
+    const ta=$('lastRoundPrompt'), wrap=$('lastRoundWrap');
+    if(ta) ta.value=text||'';
+    if(wrap){ wrap.hidden=!text; if(text) wrap.open = (localStorage.getItem(LASTROUND_OPEN_LS) ?? '1')==='1'; }
+    try{ localStorage.setItem(LASTROUND_TEXT_LS, text||''); }catch(e){}
+  }
+  function genFilename(url){ try{ const u=new URL(url, location.href); return u.searchParams.get('filename')||''; }catch(e){ return ''; } }
+  function genSetError(msg){ genSetBusy(false); const p=$('genProgress'); if(p) p.hidden=true; setStatus('genStatus', msg||'Workflow failed.', 'err'); }
+  function setOnDeckPrompt(text){
+    const ta=$('onDeckPrompt'); if(ta) ta.value=text||'';
+    try{ localStorage.setItem(ONDECK_TEXT_LS, text||''); }catch(e){}
+    // Only auto-expand on new text when "Auto on Run Workflow" is checked;
+    // otherwise respect the collapsed state the user left it in.
+    const wrap=$('onDeckWrap');
+    if(wrap && text && $('onDeckAuto')?.checked){ wrap.open=true; try{ localStorage.setItem(ONDECK_OPEN_LS,'1'); }catch(e){} }
+  }
+
+  (function bindWorkflowTab(){
+    // Top-level right-column tabs.
+    document.querySelectorAll('.rightTab').forEach(btn=>btn.addEventListener('click',()=>{
+      const k=btn.dataset.rpane;
+      document.querySelectorAll('.rightTab').forEach(b=>b.classList.toggle('active', b===btn));
+      document.querySelectorAll('.rightPane').forEach(p=>p.classList.toggle('active', p.dataset.rpaneview===k));
+      const rw=$('runWorkflowBtn'); if(rw) rw.hidden = (k!=='workflow');
+      try{ localStorage.setItem(RIGHT_TAB_LS,k); }catch(e){}
+    }));
+
+    // Run Workflow: save JSON to the node + queue the graph (stays open).
+    // If "Auto on Run Workflow" is checked and an on-deck prompt exists, run the
+    // full Run it! sequence (rebuild from the on-deck prompt) instead.
+    $('runWorkflowBtn')?.addEventListener('click',()=>{
+      if(genBusy) return;
+      if($('onDeckAuto')?.checked && ($('onDeckPrompt')?.value||'').trim()){ $('onDeckRun')?.click(); return; }
+      try{ generateJson(false); }catch(e){}
+      genSetBusy(true);
+      postParent('scgRunWorkflow');
+    });
+    $('genInterruptBtn')?.addEventListener('click',()=>{ postParent('scgInterrupt'); });
+
+    // Run it!: clear inputs (keep locks) → load on-deck prompt → agent rebuild → generate.
+    $('onDeckRun')?.addEventListener('click', async ()=>{
+      if(genBusy || agentBusy) return;
+      const txt=($('onDeckPrompt')?.value||'').trim();
+      if(!txt){ setStatus('genStatus','On-deck prompt is empty.','warn'); return; }
+      genSetBusy(true);
+      try{
+        setStatus('genStatus','Run it! · clearing inputs (locks kept)…','');
+        clearGlobalInputFields();
+        const sp=$('simplePrompt'); if(sp){ sp.value=txt; try{ localStorage.setItem(VLM_PROMPT_LS, sp.value); }catch(e){} }
+        setLastRoundPrompt(txt);   // record what this round actually ran
+        setStatus('genStatus','Run it! · building the scene via the agent…','');
+        await runFeelingLucky();
+        generateJson(false);
+        setStatus('genStatus','Run it! · queuing the workflow…','');
+        postParent('scgRunWorkflow');
+      }catch(e){ genSetBusy(false); setStatus('genStatus','Run it! failed: '+(e.message||e),'err'); }
+    });
+
+    // Load the latest render as the main reference image.
+    $('loadGenAsRef')?.addEventListener('click', async ()=>{
+      if(!genResultURL) return;
+      if(isRefLocked()){ setStatus('genStatus','Reference image is locked — unlock it to load the render.','warn'); return; }
+      try{
+        setStatus('genStatus','Loading render as reference image…','');
+        const resp=await fetch(genResultURL); const blob=await resp.blob();
+        const dataUrl=await vlmResizeImage(blob);
+        applyRefImage(dataUrl, true);
+        setStatus('genStatus','Loaded render as reference image.','ok');
+      }catch(e){ setStatus('genStatus','Could not load render as reference: '+(e.message||e),'err'); }
+    });
+
+    // Save the latest render to disk.
+    $('saveGenImage')?.addEventListener('click', async ()=>{
+      if(!genResultURL) return;
+      try{
+        setStatus('genStatus','Saving image…','');
+        const resp=await fetch(genResultURL); const blob=await resp.blob();
+        const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+        a.download=genFilename(genResultURL) || ('scg_render_'+Date.now()+'.png');
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(()=>{ try{ URL.revokeObjectURL(a.href); }catch(e){} }, 1500);
+        setStatus('genStatus','Image saved.','ok');
+      }catch(e){ setStatus('genStatus','Could not save image: '+(e.message||e),'err'); }
+    });
+
+    // Last Round Prompt (read-only) open-state persistence.
+    $('lastRoundWrap')?.addEventListener('toggle',()=>{ try{ localStorage.setItem(LASTROUND_OPEN_LS, $('lastRoundWrap').open?'1':'0'); }catch(e){} });
+
+    // On-deck box: clear / copy / persistence.
+    $('onDeckClear')?.addEventListener('click',()=>{ const ta=$('onDeckPrompt'); if(ta) ta.value=''; try{ localStorage.removeItem(ONDECK_TEXT_LS); }catch(e){} });
+    $('onDeckCopy')?.addEventListener('click',()=>{ const ta=$('onDeckPrompt'); if(ta) copyText(ta.value); });
+    $('onDeckPrompt')?.addEventListener('input',()=>{ try{ localStorage.setItem(ONDECK_TEXT_LS, $('onDeckPrompt').value); }catch(e){} });
+    $('onDeckWrap')?.addEventListener('toggle',()=>{ try{ localStorage.setItem(ONDECK_OPEN_LS, $('onDeckWrap').open?'1':'0'); }catch(e){} });
+    $('onDeckAuto')?.addEventListener('change',()=>{ try{ localStorage.setItem(ONDECK_AUTO_LS, $('onDeckAuto').checked?'1':'0'); }catch(e){} });
+
+    // Minimize the builder to a corner so the workflow underneath is usable.
+    $('minimizeBuilder')?.addEventListener('click',()=>{ postParent('scgMinimize'); });
+
+    // Click the render preview to zoom-to-fit; click again (or Escape) to close.
+    function openLightbox(){ const url=$('genResult')?.src; if(!url || $('genResult')?.hidden) return; const lb=$('genLightbox'), im=$('genLightboxImg'); if(im) im.src=url; if(lb) lb.hidden=false; }
+    function closeLightbox(){ const lb=$('genLightbox'); if(lb) lb.hidden=true; }
+    $('genResult')?.addEventListener('click', openLightbox);
+    $('genLightbox')?.addEventListener('click', closeLightbox);
+    window.addEventListener('keydown',(e)=>{ if(e.key==='Escape' && !$('genLightbox')?.hidden){ e.stopPropagation(); closeLightbox(); } }, true);
+
+    // Restore persisted UI state.
+    try{ const od=localStorage.getItem(ONDECK_TEXT_LS); if(od && $('onDeckPrompt')) $('onDeckPrompt').value=od; }catch(e){}
+    try{ if(localStorage.getItem(ONDECK_OPEN_LS)==='1' && $('onDeckWrap')) $('onDeckWrap').open=true; }catch(e){}
+    try{ if(localStorage.getItem(ONDECK_AUTO_LS)==='1' && $('onDeckAuto')) $('onDeckAuto').checked=true; }catch(e){}
+    try{ const lr=localStorage.getItem(LASTROUND_TEXT_LS); if(lr) setLastRoundPrompt(lr); }catch(e){}
+    try{
+      const tab=localStorage.getItem(RIGHT_TAB_LS);
+      if(tab==='workflow'){ document.querySelector('.rightTab[data-rpane="workflow"]')?.click(); }
+    }catch(e){}
+  })();
+
   window.ideogram4BuilderAPI = {
+    setRunning(on){ genSetBusy(!!on); },
+    setGenerationProgress(p){ genSetProgress(p); },
+    setGenerationResult(url){ genSetResult(url); },
+    setGenerationError(msg){ genSetError(msg); },
+    setOnDeckPrompt(text){ setOnDeckPrompt(text); },
+    // Triggered by the parent's minimized "Run Workflow" button — runs the same
+    // path as the in-UI button (honors the Auto-on-Run-Workflow checkbox).
+    hostRunWorkflow(){ const b=$('runWorkflowBtn'); if(b && !genBusy) b.click(); },
+    isGenBusy(){ return !!genBusy; },
     getJSON(){ return generateJson(false); },
     setJSON(text){
       try{

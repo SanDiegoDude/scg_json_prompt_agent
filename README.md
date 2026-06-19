@@ -37,6 +37,35 @@ JSON schemas, under the **Agent Configuration** panel.
 | `width` | INT | Computed from the megapixel / divisible-by selector. |
 | `height` | INT | Computed from the megapixel / divisible-by selector. |
 
+## In-UI generation loop (Workflow output tab)
+
+The builder's right column has two tabs: **JSON output** (the editable prompt +
+Agent Configuration) and **Workflow output**, which lets you generate and
+iterate without leaving the builder.
+
+- **Run Workflow** — saves the current JSON to the node and queues the open
+  ComfyUI graph; the rendered image streams back into the output box (with a
+  progress bar). The builder stays open so you can iterate. There's also an
+  **Interrupt** button.
+- **Load as reference image** — pushes the latest render into the main reference
+  image input (resized ~0.5 MP) so the next round can build on it.
+- **On-deck prompt** — a collapsible, editable box (remembers open/closed) that
+  holds the prompt for the next round. **Run it!** clears the inputs (keeping any
+  locked fields), loads the on-deck text, rebuilds the scene through the full
+  agent chain, then fires the generation.
+
+Because the iframe can't talk to ComfyUI directly, the queue + result streaming
+is handled by the parent extension (`web/okims_json_builder.js`) over the
+ComfyUI websocket; the loop is live while the builder is open (the last render +
+on-deck prompt are cached and re-shown if you reopen it).
+
+### Helper nodes (optional)
+
+| Node | Purpose |
+| --- | --- |
+| `SCG Image Result` | Wire your final image here so the Workflow output tab shows that exact render. Behaves like Preview Image (temp output). If absent, the builder falls back to the last Preview/Save Image of the run. |
+| `SCG Next-Round Prompt Catcher` | Catch a STRING produced by your workflow; its value is forwarded into the on-deck prompt box for the next round. |
+
 ## SCG Magic JSON BBoxer (headless node)
 
 A second node, **SCG Magic JSON BBoxer** (also under `SCG/Ideogram`), runs the
@@ -203,11 +232,15 @@ Other providers use the standard `max_tokens` + `temperature`.
 - `nodes.py` — the ComfyUI nodes; outputs the cleaned JSON plus `width`/`height`.
 - `magic_bboxer.py` — the headless **SCG Magic JSON BBoxer** node (runs the full
   global → summary → bbox agent chain server-side).
+- `runtime_nodes.py` — the optional **SCG Image Result** and **SCG Next-Round
+  Prompt Catcher** helper nodes for the in-UI generation loop.
 - `providers.py` — parses `.env`, registers two routes, and exposes a synchronous
   `chat_completion()` helper used by the headless node:
   - `GET /scg_prompt_agent/providers` — provider list (no secrets).
   - `POST /scg_prompt_agent/chat` — server-side proxy to the selected provider.
-- `web/` — the builder UI (loaded in an iframe over the ComfyUI canvas).
+- `web/` — the builder UI (iframe over the ComfyUI canvas) plus
+  `okims_json_builder.js`, the parent extension that queues runs and streams
+  results back into the Workflow output tab.
 
 ## Credits
 

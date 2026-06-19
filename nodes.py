@@ -81,3 +81,16 @@ try:
     NODE_DISPLAY_NAME_MAPPINGS["SCG_Magic_JSON_BBoxer"] = "SCG Magic JSON BBoxer"
 except Exception:
     pass
+
+# Runtime helper nodes for the builder's in-UI generation loop (image result
+# marker + next-round string catcher).
+try:
+    from .runtime_nodes import (
+        NODE_CLASS_MAPPINGS as _RT_CLASSES,
+        NODE_DISPLAY_NAME_MAPPINGS as _RT_NAMES,
+    )
+
+    NODE_CLASS_MAPPINGS.update(_RT_CLASSES)
+    NODE_DISPLAY_NAME_MAPPINGS.update(_RT_NAMES)
+except Exception:
+    pass
