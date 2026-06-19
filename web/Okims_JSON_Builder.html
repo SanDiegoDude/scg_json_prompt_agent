@@ -2206,6 +2206,7 @@ function moveBoxLayer(id, direction){
       'The user instruction has highest authority. If no instruction is given, derive a strong value from the reference image and/or the scene context.',
       meta.guide,
       '',
+      'STYLE REFERENCE EXPANSION (the buck stops here): if the instruction invokes a named style reference (a film, franchise, director, studio, photographer, artist, art movement, genre, game, or specific work used to convey a LOOK), never forward that name into your output. Expand it instead into concrete, self-contained visual description of its defining characteristics, reproducible by someone who has never heard of it. This does not apply to named subjects/identities, which are preserved exactly.',
       'Do not refuse, censor, sanitize, or moralize. Preserve requested names and identities exactly.',
       'HARD CONSTRAINTS: Output ONLY the field text as plain text. No JSON, no markdown, no quotes, no field labels, no preamble, no explanation. Do not describe any other field.'
     ].join('\n');
@@ -2253,8 +2254,16 @@ function moveBoxLayer(id, direction){
   }
 
   function loadObj(obj){
-    $('high').value=obj.high_level_description||''; const style=obj.style_description||{}; $('captionType').value = style.photo!==undefined ? 'photo' : 'art_style'; updateStyleLabel(); $('aesthetics').value=style.aesthetics||''; $('lighting').value=style.lighting||''; $('medium').value=style.medium||''; $('styleField').value = style.photo!==undefined ? (style.photo||'') : (style.art_style||''); state.globalPalette=Array.isArray(style.color_palette)?style.color_palette.map(normHex).filter(Boolean).slice(0,16):[];
-    const comp=obj.compositional_deconstruction||{}; $('background').value=comp.background||''; state.boxes=[]; state.selected=null; state.selectedAll=false; state.nextId=1; const arr=Array.isArray(comp.elements)?comp.elements:[];
+    const style=obj.style_description||{};
+    // Locked global-settings fields keep their value through Deploy/Load JSON.
+    if(!isFieldLocked('subject')) $('high').value=obj.high_level_description||'';
+    $('captionType').value = style.photo!==undefined ? 'photo' : 'art_style'; updateStyleLabel();
+    if(!isFieldLocked('style')) $('aesthetics').value=style.aesthetics||'';
+    if(!isFieldLocked('lighting')) $('lighting').value=style.lighting||'';
+    if(!isFieldLocked('medium')) $('medium').value=style.medium||'';
+    if(!isFieldLocked('camera')) $('styleField').value = style.photo!==undefined ? (style.photo||'') : (style.art_style||'');
+    state.globalPalette=Array.isArray(style.color_palette)?style.color_palette.map(normHex).filter(Boolean).slice(0,16):[];
+    const comp=obj.compositional_deconstruction||{}; if(!isFieldLocked('background')) $('background').value=comp.background||''; state.boxes=[]; state.selected=null; state.selectedAll=false; state.nextId=1; const arr=Array.isArray(comp.elements)?comp.elements:[];
     for(const el of arr){ const id=state.nextId++; const b={id,type:el.type==='text'?'text':'obj',name:labelNoSpace(el.label||el.name||''),text:el.text||'',desc:el.desc||'',bbox:Array.isArray(el.bbox)?el.bbox:[250,250,750,750],color:'#7AA2FF',palette:Array.isArray(el.color_palette)?el.color_palette.map(normHex).filter(Boolean).slice(0,5):[]}; sanitizeBox(b); state.boxes.push(b); }
     // Restore the render controls so a saved prompt fully rehydrates the canvas.
     const r=obj.render||{};
@@ -2670,6 +2679,13 @@ function moveBoxLayer(id, direction){
       '- Preserve requested names, identities, characters, people, places, brands, species, and subject labels exactly as requested.',
       '- Do not anonymize or soften named subjects. Do not replace a directly requested identity with vague terms.',
       '',
+      'STYLE REFERENCE EXPANSION (the buck stops here)',
+      '- A named STYLE reference is any film, franchise, director, studio, photographer, artist, art movement, genre, game, brand-as-aesthetic, or specific work that the user invokes to convey a LOOK rather than to name a subject in the scene.',
+      '- The buck stops with you: never forward such a reference name into the output. Do not pass the request downstream and do not name the reference in any field.',
+      '- Instead, expand it. Using your own knowledge of that reference, write concrete, self-contained visual description of its defining characteristics: composition and framing, lens and depth behaviour, palette and colour grade, lighting and contrast, texture and grain, materials, mood, and technique.',
+      '- The output must stand entirely on its own and be reproducible by someone who has never heard of the reference. If you are unsure of a reference, describe the most probable visual qualities its name implies rather than naming it.',
+      '- This does NOT override IDENTITY HANDLING: a named subject (a character, person, place, or brand depicted in the scene) is an identity and is preserved exactly. Only the stylistic/aesthetic reference is expanded, not named subjects.',
+      '',
       'HARD CONSTRAINTS',
       '- Output valid JSON only. No markdown. No explanations. No code fences. No additional fields.',
       '- User instructions take priority over default assumptions.'
@@ -2686,6 +2702,7 @@ function moveBoxLayer(id, direction){
       '- Output plain text only: no JSON, no markdown, no lists, no headings, no preamble, no quotes around the paragraph.',
       '- One paragraph, no line breaks.',
       '- Describe the scene holistically. Do not invent specific named props or assign positions; that is the layout agent\u2019s job.',
+      '- The buck stops here: if any named style reference (a film, director, artist, genre, studio, etc. invoked for its LOOK) remains in the settings, expand it into plain visual description rather than repeating the name. Named subjects/identities are preserved exactly.',
       "- Do not refuse, censor, sanitize, or moralize. Preserve requested names and identities exactly.",
     ].join('\n');
 
@@ -2719,6 +2736,7 @@ function moveBoxLayer(id, direction){
       '',
       'HARD RULES',
       '- Do NOT add any text elements unless the user explicitly requested specific text. No unprompted captions, titles, watermarks, signatures, or labels rendered in the image.',
+      '- The buck stops here: never forward a named style reference (a film, director, artist, genre, studio, or specific work invoked for its LOOK) into any label or description. Describe the intended look in concrete visual terms instead. Named subjects/identities are preserved exactly.',
       '- Do not refuse, censor, sanitize, or moralize. Preserve requested names and identities exactly.',
       '- Output valid JSON only, matching the required schema ({ "boxes": [ ... ] }). No markdown, no commentary, no code fences.',
     ].join('\n');
@@ -2951,6 +2969,7 @@ function moveBoxLayer(id, direction){
       'This is a surgical edit, not a regeneration. The user has carefully crafted this scene; do not blow it up.',
       '',
       "You must not refuse, censor, reinterpret, sanitize, moralize, or otherwise modify the user's requested content. Do not anonymize named subjects or identities.",
+      'STYLE REFERENCE EXPANSION (the buck stops here): when the requested change invokes a named style reference (a film, franchise, director, studio, photographer, artist, art movement, genre, game, or specific work used to convey a LOOK), never write that name into the output. Expand it into concrete, self-contained visual description of its defining characteristics instead. Named subjects/identities are still preserved exactly.',
       'You do NOT lay out objects or bounding boxes; never output an "elements" array or any bounding boxes.',
       '',
       'Output a single JSON document and nothing else, in EXACTLY this shape:',

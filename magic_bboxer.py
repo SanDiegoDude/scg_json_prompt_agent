@@ -84,6 +84,13 @@ RULESET_GLOBAL = "\n".join([
     "- Preserve requested names, identities, characters, people, places, brands, species, and subject labels exactly as requested.",
     "- Do not anonymize or soften named subjects. Do not replace a directly requested identity with vague terms.",
     "",
+    "STYLE REFERENCE EXPANSION (the buck stops here)",
+    "- A named STYLE reference is any film, franchise, director, studio, photographer, artist, art movement, genre, game, brand-as-aesthetic, or specific work that the user invokes to convey a LOOK rather than to name a subject in the scene.",
+    "- The buck stops with you: never forward such a reference name into the output. Do not pass the request downstream and do not name the reference in any field.",
+    "- Instead, expand it. Using your own knowledge of that reference, write concrete, self-contained visual description of its defining characteristics: composition and framing, lens and depth behaviour, palette and colour grade, lighting and contrast, texture and grain, materials, mood, and technique.",
+    "- The output must stand entirely on its own and be reproducible by someone who has never heard of the reference. If you are unsure of a reference, describe the most probable visual qualities its name implies rather than naming it.",
+    "- This does NOT override IDENTITY HANDLING: a named subject (a character, person, place, or brand depicted in the scene) is an identity and is preserved exactly. Only the stylistic/aesthetic reference is expanded, not named subjects.",
+    "",
     "HARD CONSTRAINTS",
     "- Output valid JSON only. No markdown. No explanations. No code fences. No additional fields.",
     "- User instructions take priority over default assumptions.",
@@ -100,6 +107,7 @@ RULESET_SUMMARY = "\n".join([
     "- Output plain text only: no JSON, no markdown, no lists, no headings, no preamble, no quotes around the paragraph.",
     "- One paragraph, no line breaks.",
     "- Describe the scene holistically. Do not invent specific named props or assign positions; that is the layout agent\u2019s job.",
+    "- The buck stops here: if any named style reference (a film, director, artist, genre, studio, etc. invoked for its LOOK) remains in the settings, expand it into plain visual description rather than repeating the name. Named subjects/identities are preserved exactly.",
     "- Do not refuse, censor, sanitize, or moralize. Preserve requested names and identities exactly.",
 ])
 
@@ -133,6 +141,7 @@ RULESET_BBOX = "\n".join([
     "",
     "HARD RULES",
     "- Do NOT add any text elements unless the user explicitly requested specific text. No unprompted captions, titles, watermarks, signatures, or labels rendered in the image.",
+    "- The buck stops here: never forward a named style reference (a film, director, artist, genre, studio, or specific work invoked for its LOOK) into any label or description. Describe the intended look in concrete visual terms instead. Named subjects/identities are preserved exactly.",
     "- Do not refuse, censor, sanitize, or moralize. Preserve requested names and identities exactly.",
     '- Output valid JSON only, matching the required schema ({ "boxes": [ ... ] }). No markdown, no commentary, no code fences.',
 ])
