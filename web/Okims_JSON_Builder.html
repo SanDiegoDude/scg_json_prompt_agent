@@ -177,6 +177,11 @@
   .canvasCol .canvasOuter{flex:1 1 auto;height:auto;min-height:160px}
   .elementsDock{flex:0 0 auto;display:flex;flex-direction:column;min-height:90px;height:var(--elementsDockH,30vh);max-height:75vh}
   .elementsDock .title{flex:0 0 auto}
+  .elementsHeader{flex:0 0 auto;display:flex;align-items:center;justify-content:flex-start;gap:10px}
+  .elementsHeaderBtns{display:flex;gap:6px;flex:0 0 auto}
+  .elementsHeaderBtns .canvasToolBtn{border:1px solid var(--line)}
+  .elementsHeaderBtns .canvasToolBtn.active{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--panel2))}
+  .elementsHeaderBtns .canvasToolBtn:disabled{opacity:.4;cursor:not-allowed}
   .elementsDock .elementList{flex:1 1 auto;max-height:none;min-height:0;overflow:auto;margin-top:8px}
   .dockSplitter{flex:0 0 auto;height:11px;margin:5px 0 1px;cursor:row-resize;display:flex;align-items:center;justify-content:center;user-select:none;touch-action:none}
   .dockSplitter::before{content:"";height:4px;width:46px;border-radius:999px;background:color-mix(in srgb, var(--accent) 55%, var(--line));box-shadow:0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent)}
@@ -185,6 +190,9 @@
   .canvasOuter.panReady{cursor:grab}
   .canvasOuter.panning{cursor:grabbing!important}
   #stageWorkspace{position:relative;min-width:100%;min-height:100%;width:100%;height:100%}
+  /* Reference image shown behind the boxes for manual line-up. Stretches to the
+     canvas (the 0-1000 bbox space); pair with "Match ref AR" to avoid distortion. */
+  #stageRefBg{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;pointer-events:none;z-index:0;opacity:.8;border-radius:2px}
   #stage{position:absolute;display:block;left:0;top:0;background:linear-gradient(135deg,var(--stageA) 0%,var(--stageB) 100%);border:2px solid color-mix(in srgb, var(--line) 70%, var(--text));box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);user-select:none;touch-action:none;overflow:hidden;--grid-x:40px;--grid-y:40px;--impact-x:160px;--impact-y:160px;--tag-preview-w:72%;--tag-preview-h:72%;--tag-lines:4}
   #stage:before{content:none!important;display:none!important}
   #stage.showCenterGuides:after{content:none!important}
@@ -397,7 +405,7 @@
 
   /* BBox agent bar in the canvas header */
   .bboxAgentBar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px;padding:9px;border:1px solid color-mix(in srgb,var(--accent) 32%,var(--line));border-radius:10px;background:color-mix(in srgb,var(--accent) 8%,var(--panel2))}
-  .bboxAgentBar #bboxPrompt{flex:1 1 280px;min-width:160px;font-size:12px}
+  .bboxAgentBar #bboxPrompt{flex:1 1 200px;min-width:140px;font-size:12px}
   .bboxAgentBar .bboxMaxWrap{display:flex;align-items:center;gap:5px;margin:0;white-space:nowrap;font-size:12px;color:var(--muted)}
   .bboxAgentBar .bboxMaxWrap input{width:62px}
   .bboxAgentBar .bboxRefWrap{display:flex;align-items:center;gap:5px;margin:0;white-space:nowrap;font-size:12px;color:var(--muted);cursor:pointer}
@@ -632,6 +640,7 @@
         <input id="bboxPrompt" type="text" placeholder="🧠 Tell the layout agent what to box out (e.g. add a lone figure facing a giant moon)…">
         <label class="bboxMaxWrap">Max boxes <input id="bboxMax" type="number" min="1" max="50" step="1" value="10"></label>
         <label class="bboxRefWrap" title="When a reference image is loaded, send it to the layout agent for pose/composition reference. Boxes still snap to the canvas, not the image."><input type="checkbox" id="bboxUseRef" checked> Use ref image</label>
+        <label class="bboxRefWrap" title="Before building, snap the canvas aspect ratio to the closest match for the loaded reference image (megapixels are left alone). Ignored when no reference image is loaded."><input type="checkbox" id="bboxUseRefDims"> Match ref AR</label>
         <button id="bboxGenBtn" class="primary" type="button" title="Summarize the global style, then lay out the scene as boxes">Build layout</button>
         <button id="bboxUndoBtn" class="iconBtn" type="button" disabled title="Undo: restore previous boxes and reload that prompt">↶</button>
         <button id="bboxRedoBtn" class="iconBtn" type="button" disabled title="Redo">↷</button>
@@ -640,12 +649,18 @@
     </div>
     <div id="bboxAgentStatus" class="status"></div>
     <div id="impactGuideWarn" class="impactWarn" data-i18n="impactGuideRequired">Enable Impact Guide first.</div>
-    <div class="canvasOuter"><div id="stageWorkspace"><div id="stage"></div></div></div>
+    <div class="canvasOuter"><div id="stageWorkspace"><div id="stage"><img id="stageRefBg" alt="" hidden></div></div></div>
     <div class="coord" id="coordReadout"></div>
 
     <div id="splitElements" class="dockSplitter" title="Drag to resize the Elements panel" aria-label="resize elements panel"></div>
     <div class="panel elementsDock">
-      <div class="title" data-i18n="elements">Elements</div>
+      <div class="elementsHeader">
+        <div class="title" data-i18n="elements">Elements</div>
+        <div class="elementsHeaderBtns">
+          <button id="toggleRefBg" class="canvasToolBtn" type="button" title="Show/hide the reference image behind the canvas so you can line boxes up by hand (needs a loaded reference image)"><span>🖼️</span><span>Ref BG</span></button>
+          <button id="lockAllToggle" class="canvasToolBtn" type="button" title="Lock or unlock every box at once"><span id="lockAllIcon">🔓</span><span>Lock all</span></button>
+        </div>
+      </div>
       <div id="elementList" class="elementList"></div>
     </div>
   </section>
@@ -870,7 +885,7 @@
     lang:'en', theme:'mocha', fontScale:'0.9', uiScale:'1', orientation:'horizontal', aspectRatio:'16:9', megapixels:1, divisibleBy:8,
     boxes: [], selected: null, selectedAll:false, globalPalette: [], drag: null, nextId: 1,
     fieldLocks:{medium:false, subject:false, style:false, lighting:false, camera:false, background:false},
-    leftPane:330, rightPane:390, canvasAreaHeight:520, elementsDockHeight:240, layoutDrag:null, autosaveReady:false, pendingNewBoxBbox:null, editColorBoxId:null, lastNewBoxColor:'#7AA2FF', antColor:'yellow', gridSize:10, centerGuides:true, impactCols:4, impactRows:4, impactBoxSel:null, stageZoom:1, tagScale:1, snapEnabled:true, gridSnapEnabled:false, snapStrength:14, panTool:false, spacePan:false, panDrag:null, stageBaseW:0, stageBaseH:0, skipNextExternalJsonLoad:false
+    leftPane:330, rightPane:390, canvasAreaHeight:520, elementsDockHeight:240, layoutDrag:null, autosaveReady:false, pendingNewBoxBbox:null, editColorBoxId:null, lastNewBoxColor:'#7AA2FF', antColor:'yellow', gridSize:10, centerGuides:true, impactCols:4, impactRows:4, impactBoxSel:null, stageZoom:1, tagScale:1, snapEnabled:true, gridSnapEnabled:false, snapStrength:14, panTool:false, spacePan:false, panDrag:null, stageBaseW:0, stageBaseH:0, skipNextExternalJsonLoad:false, showRefBg:false
   };
   let settingsFileHandle = null;
   let settingsFileTimer = null;
@@ -1874,7 +1889,7 @@ function moveBoxLayer(id, direction){
     picker.addEventListener('input',()=>{ text.value=picker.value.toUpperCase(); if(typeof onPick==='function') onPick(); });
   }
   function renderSelection(){ /* selection editing now lives inline in the Elements rows */ }
-  function renderAll(){ renderBoxes(); renderList(); renderSelection(); renderPalette('globalPalette', state.globalPalette, idx=>{state.globalPalette.splice(idx,1); renderAll();}); generateJson(false); autoSaveDebounced(); }
+  function renderAll(){ renderBoxes(); renderList(); renderSelection(); renderPalette('globalPalette', state.globalPalette, idx=>{state.globalPalette.splice(idx,1); renderAll();}); updateRefBg(); updateLockAllButton(); generateJson(false); autoSaveDebounced(); }
 
   function captionObject(){
     const cap={}; const high=$('high').value.trim(); if(high) cap.high_level_description=high;
@@ -1893,7 +1908,7 @@ function moveBoxLayer(id, direction){
   function getSnapshot(){
     return {version:4, savedAt:Date.now(), lang:state.lang, theme:state.theme, fontScale:state.fontScale, uiScale:state.uiScale, orientation:state.orientation, aspectRatio:state.aspectRatio, megapixels:state.megapixels, divisibleBy:state.divisibleBy,
       form:{captionType:$('captionType').value, medium:$('medium').value, high:$('high').value, aesthetics:$('aesthetics').value, lighting:$('lighting').value, styleField:$('styleField').value, background:$('background').value},
-      boxes:state.boxes, selected:state.selected, selectedAll:state.selectedAll, nextId:state.nextId, globalPalette:state.globalPalette, leftPane:state.leftPane, rightPane:state.rightPane, canvasAreaHeight:state.canvasAreaHeight, elementsDockHeight:state.elementsDockHeight, lastNewBoxColor:state.lastNewBoxColor, antColor:state.antColor, gridSize:10, centerGuides:state.centerGuides, impactCols:state.impactCols, impactRows:state.impactRows, impactBoxSel:state.impactBoxSel, stageZoom:state.stageZoom, tagScale:state.tagScale, snapEnabled:state.snapEnabled, gridSnapEnabled:state.gridSnapEnabled, snapStrength:state.snapStrength, panTool:state.panTool, textareaHeights:state.textareaHeights||{}};
+      boxes:state.boxes, selected:state.selected, selectedAll:state.selectedAll, nextId:state.nextId, globalPalette:state.globalPalette, leftPane:state.leftPane, rightPane:state.rightPane, canvasAreaHeight:state.canvasAreaHeight, elementsDockHeight:state.elementsDockHeight, lastNewBoxColor:state.lastNewBoxColor, antColor:state.antColor, gridSize:10, centerGuides:state.centerGuides, impactCols:state.impactCols, impactRows:state.impactRows, impactBoxSel:state.impactBoxSel, stageZoom:state.stageZoom, tagScale:state.tagScale, snapEnabled:state.snapEnabled, gridSnapEnabled:state.gridSnapEnabled, snapStrength:state.snapStrength, panTool:state.panTool, showRefBg:state.showRefBg, textareaHeights:state.textareaHeights||{}};
   }
   function snapshotText(){ return JSON.stringify(getSnapshot(), null, 2); }
   function downloadSettingsFile(){
@@ -1978,6 +1993,7 @@ function moveBoxLayer(id, direction){
     state.elementsDockHeight = clamp(Number(s.elementsDockHeight || state.elementsDockHeight || 240), 90, 1200);
     state.antColor=s.antColor||state.antColor||'white';
     state.gridSize=10;
+    state.showRefBg=!!s.showRefBg;
     state.centerGuides=s.centerGuides!==undefined ? !!s.centerGuides : true;
     state.impactCols=clamp(Math.round(Number(s.impactCols||state.impactCols||4)),1,24);
     state.impactRows=clamp(Math.round(Number(s.impactRows||state.impactRows||4)),1,24);
@@ -2146,7 +2162,7 @@ function moveBoxLayer(id, direction){
     localStorage.removeItem(LS);
     state.lang=keepLang; state.theme='mocha'; state.fontScale='0.9'; state.uiScale='1'; state.orientation='horizontal'; state.aspectRatio='16:9'; state.megapixels=1; state.divisibleBy=8; state.antColor='yellow'; state.gridSize=10; state.centerGuides=true; state.impactCols=4; state.impactRows=4; state.impactBoxSel=null; state.stageZoom=1; state.tagScale=1; state.snapEnabled=true; state.gridSnapEnabled=false; state.snapStrength=14; state.panTool=false; state.spacePan=false; state.panDrag=null;
     state.boxes=[]; state.selected=null; state.nextId=1; state.globalPalette=[];
-    state.leftPane=330; state.rightPane=390; state.canvasAreaHeight=520; state.elementsDockHeight=240; state.textareaHeights={}; state.layoutDrag=null; state.drag=null;
+    state.leftPane=330; state.rightPane=390; state.canvasAreaHeight=520; state.elementsDockHeight=240; state.textareaHeights={}; state.layoutDrag=null; state.drag=null; state.showRefBg=false;
     ['high','aesthetics','lighting','styleField','background','globalColor','elColor'].forEach(id=>{ if($(id)) $(id).value=''; });
     $('medium').value='photograph'; $('captionType').value='photo';
     // Hard reset also clears the persisted raw prompt + reference image.
@@ -2263,6 +2279,21 @@ function moveBoxLayer(id, direction){
     if(clearBtn) clearBtn.addEventListener('click',(e)=>{ e.stopPropagation(); sbSetRefImage(null); });
   })();
   window.addEventListener('keydown',e=>{ if(e.key==='Escape' && $('sectionBuilderOverlay').classList.contains('show')){ e.preventDefault(); closeSectionBuilder(); } });
+
+  // Ctrl/Cmd+V to paste an image straight into the active image input. Fires
+  // even when the caret is in a text box, but only intercepts when the clipboard
+  // actually carries an image (so ordinary text paste is left alone). Routes to
+  // the section-builder reference image when that modal is open, otherwise the
+  // main reference image — only one image input is ever active at a time.
+  window.addEventListener('paste',e=>{
+    const items=(e.clipboardData && e.clipboardData.items) ? e.clipboardData.items : [];
+    let imgFile=null;
+    for(const it of items){ if(it.kind==='file' && (it.type||'').startsWith('image/')){ const f=it.getAsFile(); if(f){ imgFile=f; break; } } }
+    if(!imgFile) return;
+    e.preventDefault();
+    if($('sectionBuilderOverlay')?.classList.contains('show')) sbSetRefFromFile(imgFile);
+    else setRefImageFromFile(imgFile);
+  });
 
   setupColorPicker('globalColor','globalColorPicker',()=>{});
   setupColorPicker('elColor','elColorPicker',()=>{});
@@ -2388,6 +2419,7 @@ function moveBoxLayer(id, direction){
   const VLM_MAXTOK_LS='okims_vlm_maxtokens';
   const BBOX_MAX_LS='okims_bbox_max';
   const BBOX_USEREF_LS='okims_bbox_useref';
+  const BBOX_USEREFDIMS_LS='okims_bbox_userefdims';
   const VLM_PROMPT_LS='scg_vlm_prompt';   // persist the raw "simple prompt" between sessions
   const VLM_REFIMG_LS='scg_vlm_refimg';   // persist the resized reference image (data URL)
   const RULESET_LS={ global:'okims_ruleset_global', summary:'okims_ruleset_summary', bbox:'okims_ruleset_bbox' };
@@ -2719,6 +2751,37 @@ function moveBoxLayer(id, direction){
       try{ if(vlmRefImage) localStorage.setItem(VLM_REFIMG_LS, vlmRefImage); else localStorage.removeItem(VLM_REFIMG_LS); }
       catch(e){ /* quota — image just won't persist this round */ }
     }
+    updateRefBg();
+  }
+
+  // Reference-image background behind the canvas (manual line-up helper).
+  function updateRefBg(){
+    const img=$('stageRefBg'), btn=$('toggleRefBg');
+    const hasImg=!!vlmRefImage;
+    if(btn){ btn.disabled=!hasImg; btn.classList.toggle('active', !!state.showRefBg && hasImg); }
+    if(!img) return;
+    if(state.showRefBg && hasImg){ img.src=vlmRefImage; img.hidden=false; }
+    else { img.hidden=true; img.removeAttribute('src'); }
+  }
+  function toggleRefBg(){
+    if(!vlmRefImage){ setStatus('bboxAgentStatus','Load a reference image first to use it as a canvas background.','warn'); return; }
+    state.showRefBg=!state.showRefBg; updateRefBg(); autoSaveDebounced();
+  }
+
+  // Global lock toggle: lock every box, or unlock them all if they're all locked.
+  function allBoxesLocked(){ return state.boxes.length>0 && state.boxes.every(b=>b.locked); }
+  function updateLockAllButton(){
+    const btn=$('lockAllToggle'), icon=$('lockAllIcon');
+    const locked=allBoxesLocked();
+    if(icon) icon.textContent = locked ? '🔒' : '🔓';
+    if(btn){ btn.classList.toggle('active', locked); btn.disabled=!state.boxes.length; }
+  }
+  function toggleLockAll(){
+    if(!state.boxes.length) return;
+    const lock=!allBoxesLocked();   // if not all locked → lock all; else unlock all
+    state.boxes.forEach(b=>{ b.locked=lock; });
+    if(lock) state.selected=null;
+    renderAll(); autoSaveDebounced();
   }
 
   async function setRefImageFromFile(file){
@@ -2926,12 +2989,40 @@ function moveBoxLayer(id, direction){
     applyAgentBoxes(arr, max, prompt||'');
     return Math.min(arr.length, clamp(parseInt(max,10)||10,1,50));
   }
+  /* ---- Match canvas aspect ratio to the reference image ---- */
+  function imageAspectFromDataUrl(dataUrl){
+    return new Promise((resolve)=>{
+      if(!dataUrl){ resolve(null); return; }
+      const img=new Image();
+      img.onload=()=>{ const w=img.naturalWidth||img.width, h=img.naturalHeight||img.height; resolve((w>0&&h>0)?(w/h):null); };
+      img.onerror=()=>resolve(null);
+      img.src=dataUrl;
+    });
+  }
+  function closestRatioLabel(ar){
+    if(!ar || !isFinite(ar) || ar<=0) return null;
+    let best=null, bestDiff=Infinity;
+    for(const r of RATIO_LIST){ const [w,h]=r.split(':').map(Number); if(!(w>0&&h>0)) continue; const diff=Math.abs(Math.log(w/h)-Math.log(ar)); if(diff<bestDiff){ bestDiff=diff; best=r; } }
+    return best;
+  }
+  // Step 1 for the layout agents: if "Match ref AR" is on and an image is loaded,
+  // snap the aspect ratio to the closest listed match. Megapixels are untouched.
+  async function alignAspectToRefImage(){
+    const chk=$('bboxUseRefDims');
+    if(!chk || !chk.checked || !vlmRefImage) return false;
+    const label=closestRatioLabel(await imageAspectFromDataUrl(vlmRefImage));
+    if(!label) return false;
+    if(label!==state.aspectRatio){ state.aspectRatio=label; populateRatios(); }
+    return true;
+  }
   async function runBboxAgent(){
     if(agentBusy) return;
     const prompt=($('bboxPrompt')?.value||'').trim();
     const max=clamp(parseInt($('bboxMax')?.value,10)||10,1,50);
-    setAgentBusy(true,'bbox'); setStatus('bboxAgentStatus','Summarizing global style…','');
+    setAgentBusy(true,'bbox');
     try{
+      if(await alignAspectToRefImage()) setStatus('bboxAgentStatus','Matched canvas aspect to reference image ('+state.aspectRatio+')…','');
+      setStatus('bboxAgentStatus','Summarizing global style…','');
       const summary=await summarizeGlobalSettings();
       setStatus('bboxAgentStatus','Laying out the scene…','');
       const n=await bboxAgentCore({summary, prompt, max});
@@ -2979,6 +3070,7 @@ function moveBoxLayer(id, direction){
     if(!seed && !vlmRefImage){ setStatus('vlmStatus','Enter a prompt (or add a reference image) for Feeling Lucky.','warn'); return; }
     setAgentBusy(true,'lucky');
     try{
+      if(await alignAspectToRefImage()) setStatus('vlmStatus','Feeling Lucky · matched canvas aspect to reference image ('+state.aspectRatio+')…','');
       setStatus('vlmStatus','Feeling Lucky · 1/3 — generating creative fields…','');
       setStatus('bboxAgentStatus','Feeling Lucky · waiting on creative fields…','');
       await enhanceCore();
@@ -3043,6 +3135,9 @@ function moveBoxLayer(id, direction){
     const bm=$('bboxMax'); if(bm){ const sv=localStorage.getItem(BBOX_MAX_LS); if(sv!==null) bm.value=sv; bm.addEventListener('change',()=>localStorage.setItem(BBOX_MAX_LS, String(clamp(parseInt(bm.value,10)||10,1,50)))); }
     // Send reference image to the bbox agent
     const ur=$('bboxUseRef'); if(ur){ const sv=localStorage.getItem(BBOX_USEREF_LS); ur.checked = sv===null ? true : sv==='1'; ur.addEventListener('change',()=>localStorage.setItem(BBOX_USEREF_LS, ur.checked?'1':'0')); }
+    const urd=$('bboxUseRefDims'); if(urd){ urd.checked = localStorage.getItem(BBOX_USEREFDIMS_LS)==='1'; urd.addEventListener('change',()=>localStorage.setItem(BBOX_USEREFDIMS_LS, urd.checked?'1':'0')); }
+    $('toggleRefBg')?.addEventListener('click', toggleRefBg);
+    $('lockAllToggle')?.addEventListener('click', toggleLockAll);
     // Editable rulesets (persist only when they differ from the default)
     const defaults={ global:DEFAULT_RULESET_GLOBAL, summary:DEFAULT_RULESET_SUMMARY, bbox:DEFAULT_RULESET_BBOX };
     Object.keys(RULESET_TA).forEach(k=>{

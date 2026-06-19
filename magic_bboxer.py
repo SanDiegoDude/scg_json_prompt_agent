@@ -340,6 +340,10 @@ class SCG_Magic_JSON_BBoxer:
                 # When True the node skips ALL agent calls and passes the prompt
                 # straight to the json_prompt output (width/height still emitted).
                 "bypass": ("BOOLEAN", {"default": False}),
+                # When True, run ONLY the global creative agent (stage 1) and emit
+                # that as the prompt — no summary/bbox stages, no layout elements.
+                # A clean "prompt enhancement" mode that lets Ideogram place assets.
+                "no_bbox_generation": ("BOOLEAN", {"default": False}),
                 "aspect_ratio": (RATIO_LIST, {"default": "1:1"}),
                 "megapixels": ("FLOAT", {"default": 1.0, "min": 0.01,
                                          "max": 100.0, "step": 0.01}),
@@ -380,7 +384,8 @@ class SCG_Magic_JSON_BBoxer:
         return None
 
     def run(self, prompt, provider, aspect_ratio, megapixels, temperature,
-            max_tokens, max_boxes, bypass=False, seed=0, image=None):
+            max_tokens, max_boxes, bypass=False, no_bbox_generation=False,
+            seed=0, image=None):
         # ``seed`` is intentionally unused: it only participates in ComfyUI's
         # input hash so the user can lock ("fixed") the node and skip re-running
         # the agent chain, reusing the cached output from the previous run.
@@ -429,6 +434,14 @@ class SCG_Magic_JSON_BBoxer:
         creative = extract_json(creative_raw)
         if not isinstance(creative, dict):
             raise RuntimeError("global agent did not return a JSON object")
+
+        # Prompt-enhancement mode: stop after the global agent and emit the
+        # creative fields with no layout elements. Ideogram still gets a rich,
+        # well-formed prompt and places assets itself.
+        if no_bbox_generation:
+            caption = self._assemble_caption(creative, [])
+            json_prompt = json.dumps(caption, ensure_ascii=False, indent=2)
+            return (json_prompt, int(dims["width"]), int(dims["height"]))
 
         # 2) Summarize the global settings into one paragraph.
         _check_interrupt()  # bail before stage 2 if the user hit interrupt
