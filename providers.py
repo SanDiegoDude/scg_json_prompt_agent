@@ -227,7 +227,13 @@ def chat_completion(provider_id, messages, temperature=0.7, max_tokens=8192,
     if response_format:
         payload["response_format"] = response_format
     body = build_request_body(cfg, payload)
-    headers = {"Content-Type": "application/json"}
+    # Some providers (e.g. Groq) sit behind Cloudflare, which blocks the default
+    # "Python-urllib/x.y" User-Agent with a 403 / error code 1010. Send a normal
+    # UA so the request is not rejected on browser signature.
+    headers = {
+        "Content-Type": "application/json",
+        "User-Agent": "scg-json-prompt-agent/1.0",
+    }
 
     if is_vertex(cfg["base_url"]):
         url = vertex_chat_url(cfg["base_url"])
@@ -245,18 +251,39 @@ def chat_completion(provider_id, messages, temperature=0.7, max_tokens=8192,
         if cfg["api_key"]:
             headers["Authorization"] = "Bearer " + cfg["api_key"]
 
-    data = json.dumps(body).encode("utf-8")
-    req = urllib.request.Request(url, data=data, headers=headers, method="POST")
-    try:
+    def _send(req_body):
+        data = json.dumps(req_body).encode("utf-8")
+        req = urllib.request.Request(url, data=data, headers=headers,
+                                     method="POST")
         with urllib.request.urlopen(req, timeout=timeout) as resp:
-            text = resp.read().decode("utf-8", "replace")
-    except urllib.error.HTTPError as exc:
-        detail = ""
+            return resp.read().decode("utf-8", "replace")
+
+    def _http_detail(exc):
         try:
-            detail = exc.read().decode("utf-8", "replace")
+            return exc.read().decode("utf-8", "replace")
         except Exception:
-            pass
-        raise RuntimeError("Upstream HTTP %s: %s" % (exc.code, detail[:400]))
+            return ""
+
+    try:
+        text = _send(body)
+    except urllib.error.HTTPError as exc:
+        detail = _http_detail(exc)
+        # Some models/providers reject structured-output `response_format`
+        # (e.g. Groq returns 400 for `json_schema` on llama/qwen models). The
+        # prompts already demand JSON and the caller parses leniently, so retry
+        # once without it rather than failing the whole run.
+        if (exc.code == 400 and "response_format" in body
+                and "response_format" in detail):
+            retry_body = {k: v for k, v in body.items() if k != "response_format"}
+            try:
+                text = _send(retry_body)
+            except urllib.error.HTTPError as exc2:
+                raise RuntimeError("Upstream HTTP %s: %s"
+                                   % (exc2.code, _http_detail(exc2)[:400]))
+            except Exception as exc2:
+                raise RuntimeError("Upstream request failed: %s" % exc2)
+        else:
+            raise RuntimeError("Upstream HTTP %s: %s" % (exc.code, detail[:400]))
     except Exception as exc:
         raise RuntimeError("Upstream request failed: %s" % exc)
 
@@ -321,7 +348,12 @@ def register_routes():
             )
 
         body = build_request_body(cfg, payload)
-        headers = {"Content-Type": "application/json"}
+        # See chat_completion(): Cloudflare-fronted providers (e.g. Groq) reject
+        # the default client User-Agent, so set an explicit one.
+        headers = {
+            "Content-Type": "application/json",
+            "User-Agent": "scg-json-prompt-agent/1.0",
+        }
 
         if is_vertex(cfg["base_url"]):
             url = vertex_chat_url(cfg["base_url"])
@@ -348,6 +380,20 @@ def register_routes():
             async with aiohttp.ClientSession(timeout=timeout) as session:
                 async with session.post(url, json=body, headers=headers) as resp:
                     text = await resp.text()
+                    # Retry without `response_format` if the model/provider
+                    # rejects structured output (see chat_completion()).
+                    if (resp.status == 400 and "response_format" in body
+                            and "response_format" in text):
+                        retry_body = {k: v for k, v in body.items()
+                                      if k != "response_format"}
+                        async with session.post(url, json=retry_body,
+                                                headers=headers) as resp2:
+                            text = await resp2.text()
+                            return web.Response(
+                                status=resp2.status,
+                                text=text,
+                                content_type="application/json",
+                            )
                     return web.Response(
                         status=resp.status,
                         text=text,
